@@ -6,8 +6,6 @@
   - [Host Configuration](#host-configuration)
     - [Loopback Adapter Installtion](#loopback-adapter-installtion)
     - [Loopback Adapter Configuration](#loopback-adapter-configuration)
-  - [Application Configuration](#application-configuration)
-    - [VMware Workstation Player Configuration](#vmware-workstation-player-configuration)
 
 
 ## Prerequisites
@@ -55,31 +53,4 @@ Configuration of the Windows Host machine
 <br><img src='.images/windows-adapter-1.png' height="400"><br>
 
 8. Click `Ok` to confirm settings
-
-
-
-
-## Application Configuration
-
-
-### VMware Workstation Player Configuration
-
-
-1. Open VMware Workstation Player
-2. Import `GNS3 VM`
-3. Open `GNS3 VM Settings` (ensure the VM is closed)
-<br><img src='.images/windows-vmplayer-0.png' height="400"><br>
-
-4. Add a new hardware component and select `Network Adapter`
-<br><img src='.images/windows-vmplayer-1.png' height="400"><br>
-
-5. Select `Network Adapter 3`, 
-   1. set it to `Bridged` mode
-   2. click `Configure Adapters`
-<br><img src='.images/windows-vmplayer-2.png' height="400"><br>
-
-6. Select the loopback adapter we created in the previous section
-<br><img src='.images/windows-vmplayer-3.png' height="200"><br>
-
-7. Click `OK` to confirm all changes
 

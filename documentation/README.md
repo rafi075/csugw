@@ -2,5 +2,14 @@
 
 
 
-### Table of Contents
+## Table of Contents
 - [Setup](./setup/)
+  - [Windows Machine](./setup/windows.md)
+  - [VMware Player](./setup/vmplayer.md)
+  - [GNS3](./setup/gns3.md)
+
+## Installation and Configuration Order
+> Complete the following steps in order
+1. [Windows Machine](./setup/windows.md)
+2. [VMware Player](./setup/vmplayer.md)
+3. [GNS3](./setup/gns3.md)
