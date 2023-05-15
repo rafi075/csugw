@@ -3,7 +3,7 @@
 
 
 ## Table of Contents
-- [Setup](#setup)
+- Setup
   - [Windows Machine](./setup/windows.md)
   - [VMware Player](./setup/vmplayer.md)
   - [GNS3](./setup/gns3.md)
