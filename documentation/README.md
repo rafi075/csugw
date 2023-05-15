@@ -8,7 +8,7 @@
   - [VMware Player](./setup/vmplayer.md)
   - [GNS3](./setup/gns3.md)
 - Getting Started
-  - [First Project](./setup/demo/firstproject.md)
+  - [First Project](./demo/firstproject.md)
 
 ## Setup
 > Complete the following steps in order
