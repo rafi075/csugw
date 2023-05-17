@@ -10,7 +10,7 @@
 
 ## Setup
 1. Create a new project and wait for both servers to be running
-<br><img src="https://i.postimg.cc/yY2rZMqv/firstproj-proj-0.png" height="100"> alt="firstproj-proj-0"/><br>
+<br><img src="https://i.postimg.cc/yY2rZMqv/firstproj-proj-0.png" height="100"> <br>
 
 
 
@@ -20,16 +20,16 @@
       - [Router Installation](../setup/gns3.md)
    - `PC`
 
-<br><img src="https://i.postimg.cc/brs3GT37/firstproj-proj-1.png" height="300"> alt="firstproj-proj-1"/><br>
+<br><img src="https://i.postimg.cc/brs3GT37/firstproj-proj-1.png" height="300"> <br>
 
 
 
 3. Add a link to the `Cloud` using the third network adapter. Then connect all the devices. The subsequent interfaces do not matter.
-<br><img src="https://i.postimg.cc/j2mvy71L/firstproj-proj-2.png" height="200"> alt="firstproj-proj-2"/><br>
+<br><img src="https://i.postimg.cc/j2mvy71L/firstproj-proj-2.png" height="200"> <br>
 
 
 4. Start the router and open a console
-<br><img src="https://i.postimg.cc/zGW2Sx85/firstproj-proj-3.png" height="100"> alt="firstproj-proj-3"/><br>
+<br><img src="https://i.postimg.cc/zGW2Sx85/firstproj-proj-3.png" height="100"> <br>
 
 
 5. Enter the following commands in order:
@@ -55,7 +55,7 @@
 > These commands will differ depending on the router that you are configuring. These commands are specific to Cisco routers. If you would like to follow exactly as I do, I am using the c3600 router which can be found in the GNS3 setup section. These images were found through the third party, not Cisco... use it at your own risk.
 
 5.1 - `show ip int br` Output:
-<br><img src="https://i.postimg.cc/Px6Srczb/firstproj-router-0.png" height="200"> alt="firstproj-router-0"/><br>
+<br><img src="https://i.postimg.cc/Px6Srczb/firstproj-router-0.png" height="200"> <br>
 
 
 After the commands have been executed, `FastEthernet0/0` will be assigned an IP address of `10.1.1.101`, which can be confirmed by running `show ip int br` again.
@@ -63,5 +63,5 @@ After the commands have been executed, `FastEthernet0/0` will be assigned an IP 
 
 ## Testing
 At this point you should be able to ping the router's interface from the host machine
-<br><img src="https://i.postimg.cc/2jK0ss5r/firstproj-test-0.png" height="300"> alt="firstproj-test-0"/><br>
+<br><img src="https://i.postimg.cc/2jK0ss5r/firstproj-test-0.png" height="300"> <br>
 
