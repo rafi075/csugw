@@ -1,1 +1,0 @@
-### These images were found through the third party, not Cisco... use it at your own risk.
