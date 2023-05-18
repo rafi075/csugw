@@ -17,30 +17,31 @@
 ## Host Configuration
 Configuration of the Windows Host machine
 
-- **Disable Windows Firewall!**
+
 ### Loopback Adapter Installtion
-1. Open CMD
-2. Execute `hdwwiz.exe`
+1. ***Disable Windows Firewall***
+2. Open CMD
+3. Execute `hdwwiz.exe`
 <br><img src="https://i.postimg.cc/mrjw8qqx/windows-hdwwiz-0.png" height="100"> <br>
 
 
-3. Click `Next`
+4. Click `Next`
 <br><img src="https://i.postimg.cc/SsKG5dFn/windows-hdwwiz-1.png" height="200"> <br>
 
 
-4. Choose to install hardware manually then click `Next`
+5. Choose to install hardware manually then click `Next`
 <br><img src="https://i.postimg.cc/wvbkdNg0/windows-hdwwiz-2.png" height="300"> <br>
 
 
-5. Choose `Network adapters`, then click `Next`
+6. Choose `Network adapters`, then click `Next`
 <br><img src="https://i.postimg.cc/nrjGVLLZ/windows-hdwwiz-3.png" height="300"> <br>
 
 
-6. Select `Microsoft` as the manufacturer, and choose the `KM-TEST Loopback Adapter`. Click Next twice to install the adapter and Finish.
+7. Select `Microsoft` as the manufacturer, and choose the `KM-TEST Loopback Adapter`. Click Next twice to install the adapter and Finish.
 <br><img src="https://i.postimg.cc/0jTdzq6S/windows-hdwwiz-4.png" height="300"> <br>
 
 
-7. Verify that the adapter is installed
+8. Verify that the adapter is installed
 >Start > Settings > Control Panel > Network and Sharing Center > Change Adapter Settings
 <br><img src="https://i.postimg.cc/KcR63rkc/windows-hdwwiz-5.png" height="200"> <br>
 
