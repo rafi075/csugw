@@ -16,7 +16,8 @@
 
 ## Host Configuration
 Configuration of the Windows Host machine
-** Disable Windows Firewall! **
+
+- **Disable Windows Firewall!**
 ### Loopback Adapter Installtion
 1. Open CMD
 2. Execute `hdwwiz.exe`
