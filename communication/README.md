@@ -22,20 +22,26 @@
 Python chat server that listens for client connections on a specified IP address and port.
 
 ### Requirements
-- `config.txt` 
 
+- `config.txt`
 
 ### Exmaple Usage
+
 1. Start the server to begin listening for client connections:
+
     ```bash
     python3 ./server.py
     ```
+
 2. Connect a client to the server with `client.py`:
+
     ```bash
     python3 ./client.py
     ```
+
 3. Validate client connection:<br>
     ***TODO: ADD IMAGE***
+
 ### Key Components
 
 The server program has several important components:
@@ -58,27 +64,37 @@ The server program has several important components:
 
 ## [🗎](./client.py) Client
 
+Python client that connects to a server using a specified IP address and port.
+
 ### Requirements
 
+- `config.txt`
+
 ### Exmaple Usage
+
 1. Start the server to begin listening for client connections:
+
     ```bash
     python3 ./server.py
     ```
+
 2. Connect a client to the server with `client.py`:
+
     ```bash
     python3 ./client.py
     ```
+
 3. Validate client connection:<br>
     ***TODO: ADD IMAGE***
+
 ### Key Components
 
 - `send_messages()`
-    
+
      This function continuously reads user input from the console and sends the input as messages to the server. Each message is prefixed with 'SEND:' to indicate to the server that it's a message to be relayed.
 
 - `receive_messages()`
-    
+
      This function continuously reads incoming messages from the server and prints them to the console. It only prints messages that are prefixed with 'RECEIVE:', which are the ones relayed from the server.
 
 ## [🗎](./api.py) API Wrapper
