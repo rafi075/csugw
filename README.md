@@ -1,16 +1,10 @@
-
 <div align="center">
-
-<p style="font-size:25px;">CyberSIM: GNS3 Communication Library</p>
-
+<h1 align="center"> CyberSIM: GNS3 Communication Library </h1>
 <a href="http://www.amitmerchant.com/electron-markdownify"><img src="https://brand.colostate.edu/wp-content/uploads/sites/47/2019/01/CSU-Ram-357-617.png" alt="GNS3 Communication Library" width="200"></a>
 <br>
 <br>
 <p style="font-size:15px;">Dr. Indrajit Ray • Rakibul Talukder • Parker Jackim</p>
-
 </div>
-
----
 
 <div align="left" style="font-size:17px;">
 
