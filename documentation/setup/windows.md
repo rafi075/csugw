@@ -6,13 +6,26 @@
   - [Host Configuration](#host-configuration)
     - [Loopback Adapter Installtion](#loopback-adapter-installtion)
     - [Loopback Adapter Configuration](#loopback-adapter-configuration)
+  - [:white\_check\_mark: Next Step](#white_check_mark-next-step)
 
 
 ## Prerequisites
-- Windows 10
+> Installation pack is included in `Releases`
+- Windows 10 Pro x64
+  - Version: `build 19045.2006 10.0`
 - [GNS3](https://gns3.com/software/download)
-- [VMware Workstation Player](https://www.vmware.com/products/workstation-player.html)
-- [GNS3 Virtual Machine](https://gns3.com/software/download-vm)
+  - Username:
+    ```
+    pjackim@colostate.edu
+    ```
+  - Password:
+    ```
+    CyberSIM
+    ```
+  - [GNS3 Virtual Machine](https://gns3.com/software/download-vm), can also be installed by GNS3 installer
+- [VMware Workstation 17 Pro](https://www.vmware.com/products/workstation-pro/workstation-pro-evaluation.html)
+  - Version: `17.0.0 build-20800274`
+
 
 ## Host Configuration
 Configuration of the Windows Host machine
@@ -66,3 +79,8 @@ Configuration of the Windows Host machine
 
 8. Click `Ok` to confirm settings
 
+<br>
+
+---
+
+## [:white_check_mark: Next Step](./vmplayer.md)

@@ -5,6 +5,7 @@
   - [Table of Contents](#table-of-contents)
   - [Import GNS3 VM](#import-gns3-vm)
   - [Configuration](#configuration)
+  - [:white\_check\_mark: Next Step](#white_check_mark-next-step)
 
 
 
@@ -33,6 +34,9 @@
 
 7. Click `OK` to confirm all changes
 
+<br>
+
+---
 
 
-
+## [:white_check_mark: Next Step](./gns3.md)
