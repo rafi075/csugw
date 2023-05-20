@@ -14,7 +14,7 @@
 
 <div align="left" style="font-size:17px;">
 
-## Start Here
+## :white_check_mark: Start Here
 
 - [Installation & Setup](./documentation/README.md)
 
