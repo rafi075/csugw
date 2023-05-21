@@ -10,7 +10,7 @@
 
 
 ## Prerequisites
-> Installation pack is included in `Releases` - [Current](https://github.com/rafi075/csugw/releases/tag/v0.2)
+> Installation pack is included in [Releases](https://github.com/rafi075/csugw/releases/tag/v0.2)
 - Windows 10 Pro x64
   - Version: `build 19045.2006 10.0`
 - [GNS3](https://gns3.com/software/download)
