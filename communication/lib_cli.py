@@ -13,6 +13,61 @@ except OSError:
     MAX_WIDTH = 100
 
 
+def get_user_input(prompt:str = "", sign: str = " >> ", _prompt_color: str = "cyan", _input_color: str = "yellow") -> str:
+    """
+    Summary
+    -------------
+    Prompt the user for input, with color support.
+
+    Args
+    -------------
+        - `prompt` (`str`, `optional`): Message to describe the prompt purpose. Defaults to "".
+        - `sign` (`str`, `optional`): Indicator for user input. Defaults to " >> ".
+        - `_prompt_color` (`str`, `optional`): Prompt Color. Defaults to "cyan".
+        - `_input_color` (`str`, `optional`): User Input Color. Defaults to "yellow".
+
+    Returns
+    -------------
+        - `str`: The user input.
+
+    Example
+    -------------
+    ```python
+        age = get_user_input("What is your age?")
+        print(age)
+    ```
+    >>> What is your age? >> 
+    >>> 20
+    """
+    text = input(color(_prompt_color, prompt + sign) + color(_input_color, "", terminated=False))
+    reset_color()
+    return text
+
+help_menu = [
+    ["exit"],
+    ["quit"],
+    ["back"],
+    ["clear"]
+]    
+
+def input_loop(commands: list[list]):
+    while True:
+        user_input = get_user_input(prompt="CLI")
+        if user_input.lower() and user_input in ["help", "-h", "h", "?"]:
+            message("Help Menu", width = MAX_WIDTH/4)
+            table([[command[0], command[-1].__name__] for command in commands])
+            table(help_menu, headers=["Default Commands"])
+        if user_input and user_input in ["clear"]:
+            clear_terminal()
+        if user_input and user_input in ["back"]:
+            break
+        if user_input and user_input in ["exit", "quit"]:
+            exit(0)
+        for command in commands:
+            if user_input in command and callable(command[-1]):
+                command[-1]()
+
+
 def bold(string: str) -> str:
     """
     Makes a string bold.
@@ -61,7 +116,10 @@ def underline(string: str) -> str:
     """
     return f"\033[4m{string}\033[0m"
 
-def color(color: str, string: str) -> str:
+def reset_color():
+    print("\033[0m", end="")
+
+def color(color: str, string: str, terminated:bool = True) -> str:
     """
         Applies color to a string.
 
@@ -69,6 +127,8 @@ def color(color: str, string: str) -> str:
     -------------
         - `color` (str): The color to be applied. It should be a valid color name or color code.
         - `string` (str): The string to be colored.
+        - `terminated` (bool, optional): If True, the default color will be restored at the end of the string. Defaults to True.
+
 
     Returns
     -------------
@@ -87,8 +147,7 @@ def color(color: str, string: str) -> str:
     This function uses the rgb_to_ansi and _get_hex functions, 
     which are not included in this snippet.
     """
-    return rgb_to_ansi(string, _get_hex(Color(color)))
-
+    return rgb_to_ansi(string, _get_hex(Color(color)), terminated)
 
 def line(length:int = MAX_WIDTH, verbose:bool = False) -> str:
     """
@@ -146,7 +205,7 @@ def message(text: str, width: int = round(MAX_WIDTH/2), verbose: bool = True, **
     This function uses the `tabulate` function, which is not included in this snippet. 
     `tabulate` should be imported from the `tabulate` module before using this function.
     """
-    _width = round((width - len(text))/2)
+    _width = round((width - len(text))/2) - 3
     msg = tabulate([[f"<{'':>{_width}}{text}{'':<{_width}} >"]], tablefmt='rounded_grid', **kwargs)
     if verbose:
         print(msg)
@@ -204,6 +263,7 @@ def table(data: list or dict, headers:list = None, verbose:bool = True, ansi=Fal
     >>> ├───────┼───────┼───────┼───────┼───────┼───────┼───────┤
     >>> │     8 │     9 │    10 │    11 │    12 │    13 │    14 │
     >>> ╰───────┴───────┴───────┴───────┴───────┴───────┴───────╯
+    
     Note
     -------------
         This function uses the `tabulate` function, which should be imported from the `tabulate` module before using this function.
@@ -222,8 +282,8 @@ def table(data: list or dict, headers:list = None, verbose:bool = True, ansi=Fal
         if data and not isinstance(data[0], list):
             array = [data]
         else:
-            headers = headers or data[0]
-            array = data[1:]
+            # headers = headers or data[0]
+            array = data
 
     if headers is not None:
         headers = [underline(bold(h)) if ansi else h for h in headers]
@@ -294,7 +354,7 @@ def clear_terminal():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 
-def rgb_to_ansi(text, c:str):
+def rgb_to_ansi(text, c:str, terminated:bool = True):
     """
     Converts RGB color to the nearest equivalent ANSI color and applies it to a text string.
 
@@ -302,6 +362,7 @@ def rgb_to_ansi(text, c:str):
     -------------
         - `text` (str): The string to be colored.
         - `c` (str): The RGB color code in hex format (without the '#' symbol).
+        - `terminated` (bool, optional): If True, the default color will be restored at the end of the string. Defaults to True.
 
     Returns
     -------------
@@ -331,7 +392,7 @@ def rgb_to_ansi(text, c:str):
     ansi_g = round(g / 255 * 5)
     ansi_b = round(b / 255 * 5)
 
-    return f"\033[38;5;{(16 + (36 * ansi_r) + (6 * ansi_g) + ansi_b)}m{text}\033[0m"
+    return f"\033[38;5;{(16 + (36 * ansi_r) + (6 * ansi_g) + ansi_b)}m{text}" + ("\033[0m" if terminated else "")
 
 def timer(func):
     """

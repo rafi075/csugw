@@ -20,6 +20,8 @@ def receive_messages(client_socket):
         if command == 'RECEIVE':
             print(message)
 
+
+
 # Connect to the server and start sending and receiving messages
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect(SERVER_ADDRESS)
