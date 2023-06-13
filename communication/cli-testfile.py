@@ -123,22 +123,3 @@ timer_test()
 node_test()
 user_input_test()
 cli_test()
-
-
-
-# class demo:
-#     def __init__(self):
-#         self.name = "demo"
-#         self.commands = [
-#             "underline",
-#             "bold",
-#             "color",
-#             "line",
-#             "table",
-#             "message",
-#         ]
-# h = HelpMenu(demo())
-# h.show()
-
-
-
