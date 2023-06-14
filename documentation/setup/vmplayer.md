@@ -39,4 +39,4 @@
 ---
 
 
-## [:white_check_mark: Next Step](./gns3.md)
+## [:heavy_check_mark: Next Step](./gns3.md)

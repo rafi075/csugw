@@ -27,4 +27,4 @@
 ---
 
 
-## [:white_check_mark: Next Step](../demo/firstproject.md)
+## [:heavy_check_mark: Next Step](../demo/firstproject.md)

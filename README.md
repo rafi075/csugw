@@ -8,9 +8,9 @@
 
 <div align="left" style="font-size:17px;">
 
-## :white_check_mark: Start Here
+## :heavy_check_mark: Start Here
 
-- [Installation & Setup](./documentation/README.md)
+- [:file_folder: Installation & Setup](./documentation/README.md)
 
 ## Project Structure
 

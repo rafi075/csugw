@@ -83,4 +83,4 @@ Configuration of the Windows Host machine
 
 ---
 
-## [:white_check_mark: Next Step](./vmplayer.md)
+## [:heavy_check_mark: Next Step](./vmplayer.md)
