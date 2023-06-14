@@ -8,23 +8,23 @@
 
 <div align="left" style="font-size:17px;">
 
-## :white_check_mark: Start Here
+## :heavy_check_mark: Start Here
 
-- [Installation & Setup](./documentation/README.md)
+- [:file_folder: Installation & Setup](./documentation/README.md)
 
 ## Project Structure
 
-- [🗁](./communication/) Communication Library
-  - [🗎 Sever](./communication/server.py)
-  - [🗎 Client](./communication/client.py)
-  - [🗎 API](./communication/api.py)
+- [:file_folder: Communication Library](./communication/) 
+  - [:page_facing_up: Sever](./communication/server.py)
+  - [:page_facing_up: Client](./communication/client.py)
+  - [:page_facing_up: API](./communication/api.py)
 
-- [🗁](./documentation/) Documentation
-  - [🗁](./documentation/demo/) GNS3 Project
-    - [🗎 First Project](./documentation/demo/firstproject.md)
-  - [🗁](./documentation/setup/) Setup
-    - [🗎 Windows Host](./documentation/setup/windows.md)
-    - [🗎 VMware Workstation](./documentation/setup/vmplayer.md)
-    - [🗎 GNS3](./documentation/setup/gns3.md)
+- [:file_folder: Documentation](./documentation/) 
+  - [:file_folder: GNS3 Project](./documentation/demo/) 
+    - [:page_facing_up: First Project](./documentation/demo/firstproject.md)
+  - [:file_folder: Setup](./documentation/setup/) 
+    - [:page_facing_up: Windows Host](./documentation/setup/windows.md)
+    - [:page_facing_up: VMware Workstation](./documentation/setup/vmplayer.md)
+    - [:page_facing_up: GNS3](./documentation/setup/gns3.md)
   
 </div>
