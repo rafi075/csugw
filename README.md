@@ -15,16 +15,16 @@
 ## Project Structure
 
 - [:file_folder:](./communication/) Communication Library
-  - [🗎 Sever](./communication/server.py)
-  - [🗎 Client](./communication/client.py)
-  - [🗎 API](./communication/api.py)
+  - [:page_facing_up: Sever](./communication/server.py)
+  - [:page_facing_up: Client](./communication/client.py)
+  - [:page_facing_up: API](./communication/api.py)
 
 - [:file_folder:](./documentation/) Documentation
   - [:file_folder:](./documentation/demo/) GNS3 Project
-    - [🗎 First Project](./documentation/demo/firstproject.md)
+    - [:page_facing_up: First Project](./documentation/demo/firstproject.md)
   - [:file_folder:](./documentation/setup/) Setup
-    - [🗎 Windows Host](./documentation/setup/windows.md)
-    - [🗎 VMware Workstation](./documentation/setup/vmplayer.md)
-    - [🗎 GNS3](./documentation/setup/gns3.md)
+    - [:page_facing_up: Windows Host](./documentation/setup/windows.md)
+    - [:page_facing_up: VMware Workstation](./documentation/setup/vmplayer.md)
+    - [:page_facing_up: GNS3](./documentation/setup/gns3.md)
   
 </div>
