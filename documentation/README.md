@@ -5,9 +5,9 @@ This document walks through the installation, setup, and configuration of our wo
 
 ## Table of Contents
 
-- [:file_folder:](./demo/) GNS3 Project
+- [:file_folder: GNS3 Project](./demo/) 
   - [:page_facing_up: First Project](./demo/firstproject.md)
-- [:file_folder:](./setup/) Setup
+- [:file_folder: Setup](./setup/) 
   - [:page_facing_up: Windows Host](./setup/windows.md)
   - [:page_facing_up: VMware Workstation](./setup/vmplayer.md)
   - [:page_facing_up: GNS3](./setup/gns3.md)
