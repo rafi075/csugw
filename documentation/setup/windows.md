@@ -6,7 +6,7 @@
   - [Host Configuration](#host-configuration)
     - [Loopback Adapter Installtion](#loopback-adapter-installtion)
     - [Loopback Adapter Configuration](#loopback-adapter-configuration)
-  - [:white\_check\_mark: Next Step](#white_check_mark-next-step)
+  - [:heavy\_check\_mark: Next Step](#heavy_check_mark-next-step)
 
 
 ## Prerequisites

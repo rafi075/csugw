@@ -5,7 +5,7 @@
   - [Table of Contents](#table-of-contents)
   - [Import GNS3 VM](#import-gns3-vm)
   - [Configuration](#configuration)
-  - [:white\_check\_mark: Next Step](#white_check_mark-next-step)
+  - [:heavy\_check\_mark: Next Step](#white_check_mark-next-step)
 
 
 
