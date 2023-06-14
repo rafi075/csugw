@@ -1,10 +1,15 @@
 import socket
 import threading
+from time import sleep
 from api import API
+import lib_cli as CLI
 
+VERBOSE = False
 
 # Define the IP address and port number that the server will listen on
-SERVER_ADDRESS = ('127.0.0.1', 5000)
+SERVER_ADDRESS = ('127.0.0.3', 5000)
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
 
 # Define the executable and file path for the API
 api = API()
@@ -16,9 +21,16 @@ API_TESTING = False
 clients = []
 ins = []
 
+# Define a threading variables
+threads = []
+threads_lock = threading.Lock()
+threads_active = True
+
+
 # Define a function to handle incoming client connections
 def handle_client(client_socket, client_address):
-    print(f'Client {client_address} connected')
+    global threads_active
+    print(CLI.color("cyan", f'Client {client_address} connected'))
 
     # Add the client to the list of connected clients
     clients.append((client_socket, client_address))
@@ -27,6 +39,16 @@ def handle_client(client_socket, client_address):
     while True:
         data = client_socket.recv(1024).decode()
         if not data:
+            break
+
+        if data == "SHUTDOWN":
+            client_socket.close()
+            # clients.remove((client_socket, client_address))
+            server_socket.close()
+            threads_active = False
+            print()
+            CLI.message(CLI.color("red", f"Server Shutting Down"))
+            # threading.current_thread().join()
             break
 
         # Parse the command and message from the incoming data
@@ -49,7 +71,7 @@ def handle_client(client_socket, client_address):
     # Remove the client from the list of connected clients
     clients.remove((client_socket, client_address))
     client_socket.close()
-    print(f'Client {client_address} disconnected')
+    print(CLI.color("cyan", f'Client {client_address} disconnected'))
 
 def get_client(client_id):
 
@@ -63,21 +85,19 @@ def get_client(client_id):
     return conn,addr
 
 def read_config():
-    # using readlines()
     count = 0
-    
     with open("config.txt") as fp:
         Lines = fp.readlines()
         for line in Lines:
             count += 1
-            print("Line{}: {}".format(count, line.strip()))
+            if VERBOSE: print("Line{}: {}".format(count, line.strip()))
             command,data = line.split(':',1)
 
             if command == 'SENDTO':
                 client_id,message = data.split(':',1)
                 client_conn,addr = get_client(int(client_id))
                 if client_conn != 0 and addr != 0 :
-                    print(f'Send msg {message} to Client {addr}')
+                    if VERBOSE: print(f'Send msg {message} to Client {addr}')
                     client_conn.send(f'RECEIVE:{message}'.encode())
                 else:
                     print("client not found")
@@ -85,46 +105,77 @@ def read_config():
                 print("Command is not recognized")
 
 
-# Testing, delete later
-def API_TEST(api, status = False):
-    if status:
-        arguments = [1,2,3,4,5,6,7,8,9,10]
-        
-        print("API TESTING:\tcalling SET with arguments:", arguments, "\n", "-"*50)
-        for arg in arguments:
-            
-            # API SET Call Example
-            tag = f"tag_{chr(ord('A') + arg)}"
-            output = api.set(tag, arg)
+def show_clients():
+    for c, addr in clients:
+        print(f'Client {addr} connected')
+    pass
 
-            print(f'\t{api.EXECUTABLE} {api.PATH} SET {tag} {arg} \t --> \t {api.set(tag, arg)}', end="")
-            
-        print("\nAPI TESTING:\tcalling GET with arguments:", arguments, "\n", "-"*50)
-        for arg in arguments:
-            
-            # API GET Call Example
-            tag = f"tag_{chr(ord('A') + arg)}"
-            output = api.get(tag)
-            
-            print(f'\t{api.EXECUTABLE} {api.PATH} GET {tag} \t --> \t {api.get(tag)}', end="")
-        
-        exit(1)
+def show_client(index:int):
+    print(f"Client [{index}]")
+    pass
+
+def show_server_status():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    state = (s.connect_ex(SERVER_ADDRESS) == 0)
+    s.close()
+    txt = CLI.color("green" if state else "red", (f"Server Online -  {SERVER_ADDRESS[0]}:{SERVER_ADDRESS[1]}" if state else "Server Offline"))
+    CLI.message(txt)
 
 
+def shutdown(server=True):
+    global server_socket
 
-# Testing, delete later
-API_TEST(api, status=API_TESTING)
+    # Check if server_socket is still open
+    if server:
+        # Creating a dummy connection to wake up the server socket from accept()
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if (s.connect_ex(SERVER_ADDRESS) == 0):
+            s.send(f'SHUTDOWN'.encode())
+        s.close()
+        CLI.message(CLI.color("red", f"Shutting Down: Server"))
+        sleep(1)
+        shutdown(server=False)
+    else:
+        CLI.reset_color()
+        CLI.message(CLI.color("red", f"Shutting Down: CLI"))
+        exit()
 
-# Create a socket for the server and start listening for incoming connections
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.bind(SERVER_ADDRESS)
-server_socket.listen()
 
-print(f'Server listening on {SERVER_ADDRESS}')
+def main():
+    # Create a socket for the server and start listening for incoming connections
+    global server_socket
 
-threading.Thread(target=read_config).start()
+    server_socket.bind(SERVER_ADDRESS)
+    server_socket.listen()
 
-# Continuously accept incoming client connections
-while True:
-    client_socket, client_address = server_socket.accept()
-    threading.Thread(target=handle_client, args=(client_socket, client_address)).start()
+    # Start CLI and sever thread
+    with threads_lock:
+        # threads.append(threading.Thread(target=read_config))
+        threads.append(threading.Thread(target=CLI.input_loop, kwargs={}))
+        CLI.message(CLI.color("green", f"Server Active -  {SERVER_ADDRESS[0]} : {SERVER_ADDRESS[1]}"))
+
+        for thread in threads:
+            thread.start()
+
+    # Continuously accept incoming client connections
+    try:
+        while server_socket.fileno() != -1:
+            if (server_socket.connect_ex(SERVER_ADDRESS) != 0):
+                break
+
+            client_socket, client_address = server_socket.accept()
+            new_thread = threading.Thread(target=handle_client, args=(client_socket, client_address))
+            threads.append(new_thread)
+            new_thread.start()
+
+    except KeyboardInterrupt:
+        shutdown()
+
+
+    for thread in threads:
+        thread.join()
+
+    exit()
+
+if __name__ == '__main__':
+    main()

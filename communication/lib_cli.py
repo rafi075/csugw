@@ -43,30 +43,69 @@ def get_user_input(prompt:str = "", sign: str = " >> ", _prompt_color: str = "cy
     reset_color()
     return text
 
-help_menu = [
-    ["exit"],
-    ["quit"],
-    ["back"],
-    ["clear"]
-]    
+def process_input(user_input:str):
+    from cli_commands import CLI_COMMANDS, CLI_DEFAULT_COMMANDS
+    user_input = user_input.split(" ")
+    for command in CLI_COMMANDS + CLI_DEFAULT_COMMANDS:
+        if user_input[0] in command["Commands"]:
+            if len(command["Parameters"]) > 0:
+                return command["Function"](*command["Parameters"])
+            elif len(user_input) > 0:
+                return command["Function"](*user_input[1:])
+            else:
+                return command["Function"]()
+    else:
+        print(f"Command '{user_input}' not found.")
 
-def input_loop(commands: list[list]):
+
+def input_loop():
+    show_help_menu_brief()
     while True:
         user_input = get_user_input(prompt="CLI")
-        if user_input.lower() and user_input in ["help", "-h", "h", "?"]:
-            message("Help Menu", width = MAX_WIDTH/4)
-            table([[command[0], command[-1].__name__] for command in commands])
-            table(help_menu, headers=["Default Commands"])
-        if user_input and user_input in ["clear"]:
-            clear_terminal()
-        if user_input and user_input in ["back"]:
+        if (process_input(user_input) == "break"):
             break
-        if user_input and user_input in ["exit", "quit"]:
-            exit(0)
-        for command in commands:
-            if user_input in command and callable(command[-1]):
-                command[-1]()
 
+def create_menu(commands:list[dict], 
+                headers = ["Commands", "Description"], 
+                use_headers = False, 
+                verbose=True, 
+                pad = 40):
+    
+    # Prepare the data
+    data = []
+    for command in commands:
+        row = {}
+        for header in headers:
+            p = int(pad / 2) if header == "Commands" else pad
+            if isinstance(command[header], list):
+                row[header] = ',    '.join(command[header]).ljust(p, '⠀')
+            else:
+                row[header] = str(command[header]).ljust(p, '⠀')
+        data.append(row)
+
+    # Create and print the table
+    menu = tabulate(data, headers = "keys" if use_headers else [], tablefmt="rounded_grid")
+    if verbose: print(menu)
+    return menu
+
+def create_help_menu(main_menu:list[dict], 
+                     help_menu:list[dict], 
+                     headers:list[str] = ["Commands", "Description"], 
+                     verbose=True, 
+                     pad = 70):
+    
+    message("Help Menu", width = (pad * (4/3)) + 20)
+    m_menu = create_menu(main_menu, headers=headers, use_headers = True, verbose = verbose, pad = pad)
+    h_menu = create_menu(help_menu, headers=headers, use_headers = False, verbose = verbose, pad = pad)
+    return (m_menu, h_menu)
+
+def show_help_menu():
+    from cli_commands import CLI_COMMANDS, CLI_DEFAULT_COMMANDS
+    create_help_menu(CLI_COMMANDS, CLI_DEFAULT_COMMANDS, pad=80)
+
+def show_help_menu_brief():
+    from cli_commands import CLI_COMMANDS, CLI_DEFAULT_COMMANDS
+    create_menu([CLI_DEFAULT_COMMANDS[0]], use_headers = False, pad = 80)
 
 def bold(string: str) -> str:
     """

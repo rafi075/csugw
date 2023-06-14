@@ -1,6 +1,7 @@
 import random
 import string
-from lib_cli import *
+import time
+from lib_cli import print_array, color, bold, underline, print_dict, message, table, MAX_WIDTH, get_user_input, line, indent, timer, input_loop
 from node import *
 
 data = {
@@ -100,6 +101,7 @@ def node_test():
     show_nodes(basic=True)
 
 def cli_test():
+    """    
     commands = [
         ["underline", underline_test],
         ["bold", bold_test],
@@ -109,17 +111,93 @@ def cli_test():
         ["message", message_test],
         ["timer", timer_test],
     ]
-    message("CLI Test", width=MAX_WIDTH)
-    table(commands, headers=["Command", "Function"])
-    input_loop(commands)
 
-underline_test()
-bold_test()
-color_test()
-line_test()
-table_test()
-message_test()
-timer_test()
-node_test()
-user_input_test()
+    commands = [
+        {
+            "Commands": ["underline", "underline_test"],
+            "Description": "description",
+            "Function": underline_test,
+            "Parameters": []
+        },
+        {
+            "Commands": ["bold", "bold_test"],
+            "Description": "description",
+            "Function": bold_test,
+            "Parameters": []
+        },
+        {
+            "Commands": ["color", "color_test"],
+            "Description": "description",
+            "Function": color_test,
+            "Parameters": []
+        },
+        {
+            "Commands": ["line", "line_test"],
+            "Description": "description",
+            "Function": line_test,
+            "Parameters": []
+        },
+        {
+            "Commands": ["table", "table_test"],
+            "Description": "description",
+            "Function": table_test,
+            "Parameters": []
+        },
+        {
+            "Commands": ["message", "message_test"],
+            "Description": "description",
+            "Function": message_test,
+            "Parameters": []
+        },
+        {
+            "Commands": ["timer", "timer_test"],
+            "Description": "description",
+            "Function": timer_test,
+            "Parameters": []
+        },
+        {
+            "Commands": ["user_input", "user_input_test"],
+            "Description": "description",
+            "Function": user_input_test,
+            "Parameters": []
+        }
+    ]
+
+    help_commands = [{}]
+    help_commands = [
+        {
+            "Commands": ["help", "h", "?", "--help", "-h"],
+            "Description": "Displays this help menu",
+            "Function": create_menu,
+            "Parameters": [help_commands]
+        },
+        {
+            "Commands": ["clear", "cls"],
+            "Description": "Clears the terminal",
+            "Function": clear_terminal,
+            "Parameters": []
+        },
+        {
+            "Commands": ["exit", "quit"],
+            "Description": "Exits the program",
+            "Function": exit,
+            "Parameters": []
+        }
+    ]
+    """
+
+    message("CLI Test", width=MAX_WIDTH)
+    input_loop()
+    # table(commands, headers=["Command", "Function"])
+    # input_loop(commands)
+
+# underline_test()
+# bold_test()
+# color_test()
+# line_test()
+# table_test()
+# message_test()
+# timer_test()
+# node_test()
+# user_input_test()
 cli_test()
