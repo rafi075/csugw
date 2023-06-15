@@ -27,7 +27,7 @@ class API:
 
         Returns:
             str:                The output of the executed CLI program.
-        """  
+        """
         if executable is None:
             executable = self.EXECUTABLE
         if path is None:
@@ -45,9 +45,7 @@ class API:
 
         Returns:
             str:                The output of the executed CLI program.
-        """  
-        
-        
+        """
         # Command to execute
         command = [executable, path] + list(args)
         

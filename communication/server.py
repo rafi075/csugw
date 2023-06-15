@@ -26,7 +26,6 @@ threads = []
 threads_lock = threading.Lock()
 threads_active = True
 
-
 # Define a function to handle incoming client connections
 def handle_client(client_socket, client_address):
     global threads_active

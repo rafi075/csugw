@@ -198,6 +198,6 @@ def cli_test():
 # table_test()
 # message_test()
 # timer_test()
-# node_test()
+node_test()
 # user_input_test()
-cli_test()
+# cli_test()
