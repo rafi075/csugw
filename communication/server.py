@@ -1,12 +1,17 @@
 #!/bin/python3
 
 import threading
+import argparse
 import socket as Socket
 from socket import socket as sock
+from time import sleep
+from inputimeout import inputimeout, TimeoutOccurred
 from protocol import Protocol as NET
 from protocol import Command as NET_CMD
 from node import Node, HelpMenu
 import lib_cli as CLI
+import select
+import sys
 
 _VERBOSE = True
 _ERROR = -1
@@ -14,7 +19,7 @@ _OK = 0
 _BROADCAST = 1
 _BREAK = 2
 
-padding:int = 20
+pad = 20
 
 class Server:
     def __init__(self, host='127.0.0.1', port=5000):
@@ -22,12 +27,18 @@ class Server:
         self.port:int = port
 
         self.clients:list[Node] = []
+        self.threads:list[threading.Thread] = []
         self.IDs = []
 
         self.server:sock = sock(Socket.AF_INET, Socket.SOCK_STREAM)
         self.server.bind((self.host, self.port))
 
+        self.running = True
         self.clients_lock = threading.Lock()
+        self.print_lock = threading.Lock()
+        self.thread_lock = threading.Lock()
+        self.exit_event = threading.Event()
+
 
     def broadcast(self, message, exclude:sock = None):
         if exclude is not None and exclude in self.clients and len(self.clients) == 1:
@@ -35,7 +46,7 @@ class Server:
         if message == NET.INITIALIZE:
             return
         
-        # print(f'\n{CLI.bold("BROADCASTING")}\t[ "{message}" ]')
+        # self.print(f'\n{CLI.bold("BROADCASTING")}\t[ "{message}" ]')
 
         with self.clients_lock:
             for client in self.clients:
@@ -57,11 +68,11 @@ class Server:
 
         if message == NET.DISCONNECT:
             self.client_disconnect(client)
-            return 1
+            return True
         
         if message == NET.SHOW:
             self.show_clients()
-            return 0
+            return False
         
 
         
@@ -70,7 +81,7 @@ class Server:
 
 
     def handle(self, client:Node):
-        while True:
+        while self.running:
             try:
                 message = self.rec_sock(client.socket)
                 if self.process_message(client, message):
@@ -84,62 +95,70 @@ class Server:
                 break
 
     def receive(self):
-        while True:
-            client, address = self.server.accept()
-            tmp_node = Node(client)
+        self.server.setblocking(False)
+        while not self.exit_event.is_set():
+            ready_to_read, _, _ = select.select([self.server], [], [], 1)
+            if ready_to_read:
+                client, address = self.server.accept()
 
-            with self.clients_lock:
-                if address not in self.clients:
-                    self.send_sock(client, NET.INITIALIZE.msg())
-                    ID = self.rec_sock(client)
-                    self.send_sock(client, NET.INITIALIZE.msg(status=NET_CMD.CONFIRMED))
-                    # with self.clients_lock:
-                    client_node = Node(client, ID[:-5])
-                    self.clients.append(client_node)
-                    # self.IDs.append(address[0])
-                if _VERBOSE:
-                    CLI.line()
-                    CLI.message(f"Client Connected: {str(address)}", "green")
-                    print(f"Client ID: {str(ID[:-5]):<{padding}}")
-                    CLI.line()
-                else:
-                    CLI.message(f"Client Connected: {str(address)}", "green")
+                with self.clients_lock:
+                    if address not in self.clients:
+                        self.send_sock(client, NET.INITIALIZE.msg())
+                        ID = self.rec_sock(client)
 
-                self.broadcast(f'\n{ID} joined the chat!\n', exclude=client)
+                        if ID == NET.DISCONNECT:
+                            client.shutdown(0)
+                            client.close()
+                            break
+                        else:
+                            self.send_sock(client, NET.INITIALIZE.msg(status=NET_CMD.CONFIRMED))
 
-            thread = threading.Thread(target=self.handle, args=(client_node,))
-            thread.start()
+                        client_node = Node(client, ID[:-5])
+                        self.clients.append(client_node)
+
+                    if _VERBOSE:
+                        CLI.line()
+                        self.print(CLI.message(f"Client Connected: {str(address)}", "green", verbose=False))
+                        CLI.line()
+                    else:
+                        self.print(CLI.message(f"Client Connected: {str(address)}", "green", verbose=False))
+
+
+                with self.thread_lock:
+                    thread = threading.Thread(target=self.handle, args=(client_node,))
+                    self.threads.append(thread)
+                    thread.start()
 
 
     def send(self, client:Node, command:NET_CMD, encoding:str = 'ascii'):
         msg = command.msg()
-        if _VERBOSE: print(f'SENDING: \t\t{msg:<{padding}} --> {client._strIPPORT:>{padding}}')
+        if _VERBOSE: self.print(f'{"[LOG] SENDING:":<{pad}}  {msg:<{pad}} --> {client._strIPPORT:>{pad}}',clr="gray")
         client.send(msg)
 
     def send(self, client:Node, message:str, encoding:str = 'ascii'):
-        if _VERBOSE: print(f'SENDING: \t\t{message:<{padding}} --> {client._strIPPORT:>{padding}}')
+        if _VERBOSE: self.print(f'{"[LOG] SENDING:":<{pad}} {message:<{pad}} --> {client._strIPPORT:>{pad}}',clr="gray")
         client.send(message)
 
     def rec(self, client:Node, buff_size:int = 1024, decoding:str = 'ascii') -> str:
         message = client.read(buff_size, decoding)
         if message and _VERBOSE:
-            print(f'RECEIVED: \t\t{client._strIPPORT:<{padding}} <-- {message:>{padding}}')
+            self.print(f'{"[LOG] RECEIVED:":<{pad}} {client._strIPPORT:<{pad}} <-- {message:>{pad}}',clr="gray")
         return message
     
 
     def send_sock(self, client:sock, command:NET_CMD, encoding:str = 'ascii'):
         msg = command.msg()
-        if _VERBOSE: print(f'SENDING: \t\t{msg:<{padding}} --> {self.sock_to_str(client):>{padding}}')
+        if _VERBOSE: self.print(f'{"[LOG] SENDING:":<{pad}} {msg:<{pad}} --> {self.sock_to_str(client):>{pad}}',clr="gray")
         client.send(msg.encode(encoding))
 
     def send_sock(self, client:sock, message:str, encoding:str = 'ascii'):
-        if _VERBOSE: print(f'SENDING: \t\t{message:<{padding}} --> {self.sock_to_str(client):>{padding}}')
+        if _VERBOSE: self.print(f'{"[LOG] SENDING:":<{pad}} {message:<{pad}} --> {self.sock_to_str(client):>{pad}}',clr="gray")
         client.send(message.encode(encoding))
 
     def rec_sock(self, client:sock, buff_size:int = 1024, decoding:str = 'ascii') -> str:
         message = client.recv(buff_size).decode(decoding)
         if message:
-            print(f'RECEIVED: \t\t{self.sock_to_str(client):<{padding}} <-- {message:>{padding}}')
+            self.print(f'{"[LOG] RECEIVED:":<{pad}} {self.sock_to_str(client):<{pad}} <-- {message:>{pad}}',clr="gray")
         return message
 
     def sock_to_str(self, s:sock) -> str:
@@ -167,13 +186,12 @@ class Server:
                 client.close()
 
         run_thread.join()
-        print()
-        CLI.message(f"SERVER STOPPED", "red")
+        self.print()
 
                 
 
     def show_motd(self):
-        CLI.message(f"SERVER STARTED {str(self.host)}:{str(self.port)}", "green")
+        self.print(CLI.message(f"SERVER STARTED {str(self.host)}:{str(self.port)}", "green", verbose=False))
 
     def show_clients(self):
         client_info = []
@@ -185,32 +203,87 @@ class Server:
         for entry in client_info:
             data.append(list(entry.values()))
 
-        CLI.message(f"Connected Clients")
+        self.print(CLI.message(f"Connected Clients", verbose=False))
         CLI.table(data)
 
     def run(self):
         self.show_motd()
         self.server.listen()
-        thread = threading.Thread(target=self.receive)
-        thread.start()
+        receive_thread = threading.Thread(target=self.receive)
+        self.threads.append(receive_thread)
 
-        try:
-            # New Addition: wait for the receive thread to finish
-            thread.join()
-        except KeyboardInterrupt:
-            # New Addition: stop the server when a KeyboardInterrupt is received
-            self.stop(thread)
-        except Exception as e:
-            CLI.message(f"SERVER ERROR", "red")
-            print(e)
-            print()
-            self.stop(thread)
+        command_thread = threading.Thread(target=self.command_line)
+        self.threads.append(command_thread)
+        
+        command_thread.start()
+        receive_thread.start()
+
+        for thread in self.threads:
+            try:
+                # New Addition: wait for the receive thread to finish
+                thread.join()
+            except KeyboardInterrupt:
+                self.stop(thread)
+            except Exception as e:
+                self.print(CLI.message(f"SERVER ERROR", "red", verbose=False))
+                print(e)
+                e.with_traceback()
+                self.stop(thread)
+
+        self.server.shutdown(0)
+        self.server.close()
+        self.print(CLI.message(f"SERVER STOPPED", "red", verbose=False))
 
 
 
+    def print(self, *args, **kwargs):
+        kwargs = {**{'sep':' ','end':'\n'},**kwargs}
+        msg = ""
+        for arg in args:
+            msg += str(arg) + kwargs['sep']
+
+        msg = CLI.color(kwargs["clr"], msg) if "clr"in kwargs else msg
+        kwargs.pop("clr", "")
+        with self.print_lock:
+            print(msg, **kwargs)
+
+    def command_line(self):
+        while not self.exit_event.is_set():
+
+            ready_to_read, _, _ = select.select([sys.stdin], [], [], 1)
+            if ready_to_read:
+                message = input()
+
+                if message == NET.DISCONNECT:
+                    self.print(CLI.message(f"STOPPING SERVER...", "yellow", verbose=False))
+                    self.broadcast(NET.DISCONNECT.command)
+                    sleep(1)
+                    s = sock(Socket.AF_INET, Socket.SOCK_STREAM)
+                    s.connect((self.host, self.port))
+                    s.recv(1024)
+                    s.send(str(NET.DISCONNECT.command).encode('ascii'))
+                    s.shutdown(0)
+                    s.close()
+                    self.exit_event.set()
+                    break
 
 
-import argparse
+
+            # message = input()
+
+            # if message == NET.DISCONNECT:
+            #     self.print(CLI.message(f"STOPPING SERVER...", "yellow", verbose=False))
+            #     self.broadcast(NET.DISCONNECT.command)
+            #     sleep(1)
+            #     s = sock(Socket.AF_INET, Socket.SOCK_STREAM)
+            #     s.connect((self.host, self.port))
+            #     s.recv(1024)
+            #     s.send(str(NET.DISCONNECT.command).encode('ascii'))
+            #     s.shutdown(0)
+            #     s.close()
+            #     break
+                
+
 
 if __name__ == "__main__":
 
@@ -222,5 +295,6 @@ if __name__ == "__main__":
                         help='A port number')
 
     args = parser.parse_args()
+    CLI.clear_terminal()
     server = Server(host=args.IPv4Address, port=args.Port)
     server.run()

@@ -63,7 +63,7 @@ class Protocol:
     )
 
     DISCONNECT = Command(
-        command="DISCONNECT", 
+        command="exit", 
         name="Disconnect", 
         requires_confirmation=True,
         description = "Disconnects a node from the server"
