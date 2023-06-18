@@ -1,4 +1,5 @@
 import ipaddress as ip
+import socket
 from lib_cli import print_array, table, message
 
 DEFAULT_IP = "10.1.2.1"
@@ -7,6 +8,7 @@ DEFAULT_GATEWAY = "10.1.1.1"
 
 class Node:
     def __init__(self, 
+                 socket:socket.socket,
                  ID:str = "Default", 
                  tags:list = [], 
                  IP:str or ip.IPv4Address = DEFAULT_IP, 
@@ -16,9 +18,12 @@ class Node:
     ):
         
         self.ID = ID
-        self.PORT = int(PORT)
-        self.IP = ip.IPv4Address(str(IP))
-        self.network = ""
+        self.socket = socket
+        peerName = socket.getpeername()
+        self.PORT = int(peerName[1])
+        self.IP = ip.IPv4Address(str(peerName[0]))
+        self._strIPPORT = str(self.IP) + ":" + str(self.PORT)
+        self.network = f""
         
         if "." in str(net_mask):
             self.net_mask = (net_mask, Node.netmask_to_cidr(net_mask))
@@ -46,6 +51,23 @@ class Node:
 
     def get_basic(self) -> tuple:
         return (self.ID, self.IP, self.net_mask, self.tags)
+    
+    def get_data(self, data = ["ID", "IP", "PORT", "net_mask", "tags", "neighbors"]):
+        _data = {}
+        for k,v in vars(self).items():
+            if k in data:
+                _data.update({k:v})
+        return _data
+
+
+    def close(self) -> None:
+        self.socket.close()
+
+    def send(self, data:str, encoding = "ascii") -> None:
+        self.socket.send(data.encode(encoding))
+
+    def read(self, buff_size:int = 1024, decoding:str = 'ascii') -> str:
+        return self.socket.recv(buff_size).decode(decoding)
 
 
     @staticmethod

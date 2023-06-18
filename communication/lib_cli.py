@@ -5,6 +5,7 @@ from tabulate import tabulate
 from colour import *
 import json
 
+
 try:
     size = os.get_terminal_size()
     MAX_WIDTH = size.columns - 10
@@ -214,7 +215,7 @@ def line(length:int = MAX_WIDTH, verbose:bool = False) -> str:
         print(content)
     return content
 
-def message(text: str, width: int = round(MAX_WIDTH/2), verbose: bool = True, **kwargs):
+def message(text: str, colr:str = "", width: int = round(MAX_WIDTH/2), verbose: bool = True, **kwargs):
     """
     Creates a centered message inside a box with a specified width.
 
@@ -245,7 +246,7 @@ def message(text: str, width: int = round(MAX_WIDTH/2), verbose: bool = True, **
     `tabulate` should be imported from the `tabulate` module before using this function.
     """
     _width = round((width - len(text))/2) - 3
-    msg = tabulate([[f"<{'':>{_width}}{text}{'':<{_width}} >"]], tablefmt='rounded_grid', **kwargs)
+    msg = tabulate([[f"<{'':>{_width}}{color(colr, text) if colr else text}{'':<{_width}} >"]], tablefmt='rounded_grid', **kwargs)
     if verbose:
         print(msg)
     return "\n" + msg
@@ -507,3 +508,86 @@ def indent(text: str, level: int = 0) -> str:
     for line in text.split("\n"):
         msg += "\t"*level + line + "\n"
     return msg
+
+def gradient_text(text, value=None, colors=None, scale=100):
+    """
+    Colorizes the input text based on a gradient from red (0) to green (100).
+    The input value determines the color.
+    """
+
+    if value <= 0 or value > scale:
+        value = 1
+
+
+    # Calculate the gradient color
+    if value <= (scale / 2):
+        r = 250
+        g = 0 if value == 0 else round(255 * (value/scale)*2)  # gradient from 0 to 255
+    else:
+        r = round(510 - 255 * (value/scale)*2)  # gradient from 255 to 0
+        g = 255
+    b = 0  # keep blue at zero
+
+    
+    hex_color = '{:02x}{:02x}{:02x}'.format(r, g, b)
+
+    # colorize the text
+    return rgb_to_ansi(text, hex_color)
+
+def print_loading(txt, _time=None, scale=None, characters = ['━'], loop = False, mult=0,gradient=False,screen_width=4, lock = None):
+    if lock is not None:
+        with lock:
+            print_loading(txt, _time=_time, scale=scale, characters = characters, loop = loop,mult=mult,gradient=gradient,screen_width=screen_width, lock = None)
+        return
+
+    counter = 0
+    if len(characters) == 1:
+        size = os.get_terminal_size()
+        MAX_WIDTH = int(size.columns /screen_width)
+        MAX_HEIGHT = size.lines
+        temp = (characters[0] + ",")*MAX_WIDTH
+        characters = temp.split(",")
+    else:
+        for i in range(mult):
+            characters.extend(characters[::-1])
+    
+    scale = len(characters)*(2 if loop else 1) if scale is None else scale
+    _time = len(characters) if _time is None else _time
+    _time_inc = _time/len(characters) / (2 if loop else 1)
+
+    def print_loading_helper(text, counter):
+        if gradient:
+            print(f'\r[{gradient_text(text, counter, scale=len(characters))}]{txt:>{len(txt)+3}}', end="", flush=True)
+        else:
+            print(f'{gradient_text(text, counter, scale=len(characters))}', end="", flush=True)
+
+    def show(characters, j):
+        if gradient:
+            text = "".join(characters[:j]) + (" " * (len(characters) - j - 1))
+        else:
+            text = characters[j]
+        print_loading_helper(text, j)
+        time.sleep(_time_inc)
+        return j
+
+    for i in range(1):
+        if gradient:
+            text = "".join(characters[:i]) + (" " * (len(characters) - i - 1))
+        else:
+            text = ""
+            print("[", end="", flush=True)
+        
+        counter = i
+        print_loading_helper(text, counter)
+        time.sleep(_time_inc)
+        for j in range(i, len(characters)):
+            counter = show(characters,j)
+        
+        if loop:
+            counter = i
+            for j in range(len(characters), i+1, -1):
+                counter = show(characters,j)
+    if gradient:
+        print()
+    else:
+        print("] ", end="\n", flush=True)

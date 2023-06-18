@@ -1,180 +1,226 @@
-import socket
+#!/bin/python3
+
 import threading
-from time import sleep
-from api import API
+import socket as Socket
+from socket import socket as sock
+from protocol import Protocol as NET
+from protocol import Command as NET_CMD
+from node import Node, HelpMenu
 import lib_cli as CLI
 
-VERBOSE = False
+_VERBOSE = True
+_ERROR = -1
+_OK = 0
+_BROADCAST = 1
+_BREAK = 2
 
-# Define the IP address and port number that the server will listen on
-SERVER_ADDRESS = ('127.0.0.3', 5000)
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+padding:int = 20
 
+class Server:
+    def __init__(self, host='127.0.0.1', port=5000):
+        self.host:str = host
+        self.port:int = port
 
-# Define the executable and file path for the API
-api = API()
-api.EXECUTABLE = "python"
-api.PATH = "api-testfile.py"
-API_TESTING = False
+        self.clients:list[Node] = []
+        self.IDs = []
 
-# Define a list to store all connected clients
-clients = []
-ins = []
+        self.server:sock = sock(Socket.AF_INET, Socket.SOCK_STREAM)
+        self.server.bind((self.host, self.port))
 
-# Define a threading variables
-threads = []
-threads_lock = threading.Lock()
-threads_active = True
+        self.clients_lock = threading.Lock()
 
-# Define a function to handle incoming client connections
-def handle_client(client_socket, client_address):
-    global threads_active
-    print(CLI.color("cyan", f'Client {client_address} connected'))
-
-    # Add the client to the list of connected clients
-    clients.append((client_socket, client_address))
-
-    # Continuously read incoming messages from the client
-    while True:
-        data = client_socket.recv(1024).decode()
-        if not data:
-            break
-
-        if data == "SHUTDOWN":
-            client_socket.close()
-            # clients.remove((client_socket, client_address))
-            server_socket.close()
-            threads_active = False
-            print()
-            CLI.message(CLI.color("red", f"Server Shutting Down"))
-            # threading.current_thread().join()
-            break
-
-        # Parse the command and message from the incoming data
-        command, message = data.split(':', 1)
-
-        # If the command is SEND, relay the message to all other connected clients
-        if command == 'SEND':
-            for c, addr in clients:
-                if c != client_socket:
-                    c.send(f'RECEIVE:{message}'.encode())
+    def broadcast(self, message, exclude:sock = None):
+        if exclude is not None and exclude in self.clients and len(self.clients) == 1:
+            return
+        if message == NET.INITIALIZE:
+            return
         
-        # If the command is SENDTO, find the specified client and send the message to them
-        elif command == 'SENDTO':
-            to_client_address, message = message.split(':', 1)
-            for c, addr in clients:
-                if addr == to_client_address:
-                    c.send(f'RECEIVE:{message}'.encode())
-                    break
+        # print(f'\n{CLI.bold("BROADCASTING")}\t[ "{message}" ]')
 
-    # Remove the client from the list of connected clients
-    clients.remove((client_socket, client_address))
-    client_socket.close()
-    print(CLI.color("cyan", f'Client {client_address} disconnected'))
+        with self.clients_lock:
+            for client in self.clients:
+                if exclude is not None and client == exclude:
 
-def get_client(client_id):
-
-    conn = 0
-    addr = 0
-    while True:
-        if(len(clients) >= client_id):
-            conn, addr = clients[client_id - 1]
-            break
-
-    return conn,addr
-
-def read_config():
-    count = 0
-    with open("config.txt") as fp:
-        Lines = fp.readlines()
-        for line in Lines:
-            count += 1
-            if VERBOSE: print("Line{}: {}".format(count, line.strip()))
-            command,data = line.split(':',1)
-
-            if command == 'SENDTO':
-                client_id,message = data.split(':',1)
-                client_conn,addr = get_client(int(client_id))
-                if client_conn != 0 and addr != 0 :
-                    if VERBOSE: print(f'Send msg {message} to Client {addr}')
-                    client_conn.send(f'RECEIVE:{message}'.encode())
+                    continue
                 else:
-                    print("client not found")
-            else:
-                print("Command is not recognized")
+                    self.send(client, message)
 
 
-def show_clients():
-    for c, addr in clients:
-        print(f'Client {addr} connected')
-    pass
+    # TODO: Perhaps clean this up with protocol 'states'
+    def process_message(self, client:Node, message:str):
 
-def show_client(index:int):
-    print(f"Client [{index}]")
-    pass
+        # Message is signed with client ID
+        if ":" in message:
+            client_id, message = message.split(":")
+        else:
+            return ("null","null",_ERROR)
 
-def show_server_status():
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    state = (s.connect_ex(SERVER_ADDRESS) == 0)
-    s.close()
-    txt = CLI.color("green" if state else "red", (f"Server Online -  {SERVER_ADDRESS[0]}:{SERVER_ADDRESS[1]}" if state else "Server Offline"))
-    CLI.message(txt)
+        if message == NET.DISCONNECT:
+            self.client_disconnect(client)
+            return 1
+        
+        if message == NET.SHOW:
+            self.show_clients()
+            return 0
+        
 
-
-def shutdown(server=True):
-    global server_socket
-
-    # Check if server_socket is still open
-    if server:
-        # Creating a dummy connection to wake up the server socket from accept()
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        if (s.connect_ex(SERVER_ADDRESS) == 0):
-            s.send(f'SHUTDOWN'.encode())
-        s.close()
-        CLI.message(CLI.color("red", f"Shutting Down: Server"))
-        sleep(1)
-        shutdown(server=False)
-    else:
-        CLI.reset_color()
-        CLI.message(CLI.color("red", f"Shutting Down: CLI"))
-        exit()
+        
+        self.broadcast(f'\n{client_id}:\n{message}\n', exclude=client)
+        return 0
 
 
-def main():
-    # Create a socket for the server and start listening for incoming connections
-    global server_socket
-
-    server_socket.bind(SERVER_ADDRESS)
-    server_socket.listen()
-
-    # Start CLI and sever thread
-    with threads_lock:
-        # threads.append(threading.Thread(target=read_config))
-        threads.append(threading.Thread(target=CLI.input_loop, kwargs={}))
-        CLI.message(CLI.color("green", f"Server Active -  {SERVER_ADDRESS[0]} : {SERVER_ADDRESS[1]}"))
-
-        for thread in threads:
-            thread.start()
-
-    # Continuously accept incoming client connections
-    try:
-        while server_socket.fileno() != -1:
-            if (server_socket.connect_ex(SERVER_ADDRESS) != 0):
+    def handle(self, client:Node):
+        while True:
+            try:
+                message = self.rec_sock(client.socket)
+                if self.process_message(client, message):
+                    break
+            except Exception as e:
+                e.with_traceback()
+                with self.clients_lock:
+                    self.clients.remove(client)
+                    client.close()
+                self.broadcast(f'\n{client.ID} left the chat!\n')
                 break
 
-            client_socket, client_address = server_socket.accept()
-            new_thread = threading.Thread(target=handle_client, args=(client_socket, client_address))
-            threads.append(new_thread)
-            new_thread.start()
+    def receive(self):
+        while True:
+            client, address = self.server.accept()
+            tmp_node = Node(client)
 
-    except KeyboardInterrupt:
-        shutdown()
+            with self.clients_lock:
+                if address not in self.clients:
+                    self.send_sock(client, NET.INITIALIZE.msg())
+                    ID = self.rec_sock(client)
+                    self.send_sock(client, NET.INITIALIZE.msg(status=NET_CMD.CONFIRMED))
+                    # with self.clients_lock:
+                    client_node = Node(client, ID[:-5])
+                    self.clients.append(client_node)
+                    # self.IDs.append(address[0])
+                if _VERBOSE:
+                    CLI.line()
+                    CLI.message(f"Client Connected: {str(address)}", "green")
+                    print(f"Client ID: {str(ID[:-5]):<{padding}}")
+                    CLI.line()
+                else:
+                    CLI.message(f"Client Connected: {str(address)}", "green")
+
+                self.broadcast(f'\n{ID} joined the chat!\n', exclude=client)
+
+            thread = threading.Thread(target=self.handle, args=(client_node,))
+            thread.start()
 
 
-    for thread in threads:
-        thread.join()
+    def send(self, client:Node, command:NET_CMD, encoding:str = 'ascii'):
+        msg = command.msg()
+        if _VERBOSE: print(f'SENDING: \t\t{msg:<{padding}} --> {client._strIPPORT:>{padding}}')
+        client.send(msg)
 
-    exit()
+    def send(self, client:Node, message:str, encoding:str = 'ascii'):
+        if _VERBOSE: print(f'SENDING: \t\t{message:<{padding}} --> {client._strIPPORT:>{padding}}')
+        client.send(message)
 
-if __name__ == '__main__':
-    main()
+    def rec(self, client:Node, buff_size:int = 1024, decoding:str = 'ascii') -> str:
+        message = client.read(buff_size, decoding)
+        if message and _VERBOSE:
+            print(f'RECEIVED: \t\t{client._strIPPORT:<{padding}} <-- {message:>{padding}}')
+        return message
+    
+
+    def send_sock(self, client:sock, command:NET_CMD, encoding:str = 'ascii'):
+        msg = command.msg()
+        if _VERBOSE: print(f'SENDING: \t\t{msg:<{padding}} --> {self.sock_to_str(client):>{padding}}')
+        client.send(msg.encode(encoding))
+
+    def send_sock(self, client:sock, message:str, encoding:str = 'ascii'):
+        if _VERBOSE: print(f'SENDING: \t\t{message:<{padding}} --> {self.sock_to_str(client):>{padding}}')
+        client.send(message.encode(encoding))
+
+    def rec_sock(self, client:sock, buff_size:int = 1024, decoding:str = 'ascii') -> str:
+        message = client.recv(buff_size).decode(decoding)
+        if message:
+            print(f'RECEIVED: \t\t{self.sock_to_str(client):<{padding}} <-- {message:>{padding}}')
+        return message
+
+    def sock_to_str(self, s:sock) -> str:
+        pname = s.getpeername()
+        return f'{str(pname[0])} : {str(pname[1])}'
+
+
+    def client_disconnect(self, client:Node):
+        with self.clients_lock:
+            self.send(client, NET.DISCONNECT.msg(status=NET_CMD.CONFIRMED))
+            client.close()
+            self.clients.remove(client)
+        self.broadcast(f'\nLEFT: {client.ID}\n')
+
+    def stop(self, run_thread:threading.Thread):
+        """
+        Close the server Socket and stop the server.
+        """
+
+        self.broadcast('Server is shutting down!')
+        self.server.close()
+
+        with self.clients_lock:
+            for client in self.clients:
+                client.close()
+
+        run_thread.join()
+        print()
+        CLI.message(f"SERVER STOPPED", "red")
+
+                
+
+    def show_motd(self):
+        CLI.message(f"SERVER STARTED {str(self.host)}:{str(self.port)}", "green")
+
+    def show_clients(self):
+        client_info = []
+        for node in self.clients:
+            client_info.append(node.get_data())
+
+        data = [list(client_info[0].keys())]
+        # for each dict entry in client_info, put the values into a list and append it to data
+        for entry in client_info:
+            data.append(list(entry.values()))
+
+        CLI.message(f"Connected Clients")
+        CLI.table(data)
+
+    def run(self):
+        self.show_motd()
+        self.server.listen()
+        thread = threading.Thread(target=self.receive)
+        thread.start()
+
+        try:
+            # New Addition: wait for the receive thread to finish
+            thread.join()
+        except KeyboardInterrupt:
+            # New Addition: stop the server when a KeyboardInterrupt is received
+            self.stop(thread)
+        except Exception as e:
+            CLI.message(f"SERVER ERROR", "red")
+            print(e)
+            print()
+            self.stop(thread)
+
+
+
+
+
+import argparse
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="This is a program that accepts IP address and Port number")
+
+    parser.add_argument('-ip', '--IPv4Address', type=str, default='127.0.0.1', 
+                        help='An IPv4 address in the format xxx.xxx.xxx.xxx')
+    parser.add_argument('-p', '--Port', type=int, default=5000, 
+                        help='A port number')
+
+    args = parser.parse_args()
+    server = Server(host=args.IPv4Address, port=args.Port)
+    server.run()
