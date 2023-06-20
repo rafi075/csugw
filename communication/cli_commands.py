@@ -7,19 +7,19 @@ CLI_COMMANDS = [
         "Commands": ["clients", "show_clients"],
         "Description": "Displays an overview of all clients connected to the server.",
         "Function": show_clients,
-        "Parameters": []
+        "Parameters": [],
     },
     {
         "Commands": ["client", "show_client"],
         "Description": "Displays an overview of the connected client at the given index.",
         "Function": show_client,
-        "Parameters": []
+        "Parameters": [],
     },
     {
         "Commands": ["sstat", "server_status"],
         "Description": "Displays server status.",
         "Function": show_server_status,
-        "Parameters": []
+        "Parameters": [],
     },
 ]
 
@@ -29,33 +29,27 @@ CLI_DEFAULT_COMMANDS = [
         "Commands": ["help", "h", "?", "--help", "-h"],
         "Description": "Displays help menu",
         "Function": show_help_menu,
-        "Parameters": []
+        "Parameters": [],
     },
     {
         "Commands": ["clear", "cls"],
         "Description": "Clears the terminal",
         "Function": clear_terminal,
-        "Parameters": []
+        "Parameters": [],
     },
     {
         "Commands": ["back", "return"],
         "Description": "Exits the current menu",
         "Function": lambda: "break",
-        "Parameters": []
+        "Parameters": [],
     },
     {
         "Commands": ["exit", "quit", "kill", "q"],
         "Description": "Exits the program",
         "Function": shutdown,
-        "Parameters": []
+        "Parameters": [],
     },
 ]
-
-
-
-
-
-
 
 
 # CLI_TEST_COMMANDS = [

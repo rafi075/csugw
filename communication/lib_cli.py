@@ -14,7 +14,12 @@ except OSError:
     MAX_WIDTH = 100
 
 
-def get_user_input(prompt:str = "", sign: str = " >> ", _prompt_color: str = "cyan", _input_color: str = "yellow") -> str:
+def get_user_input(
+    prompt: str = "",
+    sign: str = " >> ",
+    _prompt_color: str = "cyan",
+    _input_color: str = "yellow",
+) -> str:
     """
     Summary
     -------------
@@ -37,15 +42,19 @@ def get_user_input(prompt:str = "", sign: str = " >> ", _prompt_color: str = "cy
         age = get_user_input("What is your age?")
         print(age)
     ```
-    >>> What is your age? >> 
+    >>> What is your age? >>
     >>> 20
     """
-    text = input(color(_prompt_color, prompt + sign) + color(_input_color, "", terminated=False))
+    text = input(
+        color(_prompt_color, prompt + sign) + color(_input_color, "", terminated=False)
+    )
     reset_color()
     return text
 
-def process_input(user_input:str):
+
+def process_input(user_input: str):
     from cli_commands import CLI_COMMANDS, CLI_DEFAULT_COMMANDS
+
     user_input = user_input.split(" ")
     for command in CLI_COMMANDS + CLI_DEFAULT_COMMANDS:
         if user_input[0] in command["Commands"]:
@@ -63,15 +72,17 @@ def input_loop():
     show_help_menu_brief()
     while True:
         user_input = get_user_input(prompt="CLI")
-        if (process_input(user_input) == "break"):
+        if process_input(user_input) == "break":
             break
 
-def create_menu(commands:list[dict], 
-                headers = ["Commands", "Description"], 
-                use_headers = False, 
-                verbose=True, 
-                pad = 40):
-    
+
+def create_menu(
+    commands: list[dict],
+    headers=["Commands", "Description"],
+    use_headers=False,
+    verbose=True,
+    pad=40,
+):
     # Prepare the data
     data = []
     for command in commands:
@@ -79,34 +90,48 @@ def create_menu(commands:list[dict],
         for header in headers:
             p = int(pad / 2) if header == "Commands" else pad
             if isinstance(command[header], list):
-                row[header] = ',    '.join(command[header]).ljust(p, '⠀')
+                row[header] = ",    ".join(command[header]).ljust(p, "⠀")
             else:
-                row[header] = str(command[header]).ljust(p, '⠀')
+                row[header] = str(command[header]).ljust(p, "⠀")
         data.append(row)
 
     # Create and print the table
-    menu = tabulate(data, headers = "keys" if use_headers else [], tablefmt="rounded_grid")
-    if verbose: print(menu)
+    menu = tabulate(
+        data, headers="keys" if use_headers else [], tablefmt="rounded_grid"
+    )
+    if verbose:
+        print(menu)
     return menu
 
-def create_help_menu(main_menu:list[dict], 
-                     help_menu:list[dict], 
-                     headers:list[str] = ["Commands", "Description"], 
-                     verbose=True, 
-                     pad = 70):
-    
-    message("Help Menu", width = (pad * (4/3)) + 20)
-    m_menu = create_menu(main_menu, headers=headers, use_headers = True, verbose = verbose, pad = pad)
-    h_menu = create_menu(help_menu, headers=headers, use_headers = False, verbose = verbose, pad = pad)
+
+def create_help_menu(
+    main_menu: list[dict],
+    help_menu: list[dict],
+    headers: list[str] = ["Commands", "Description"],
+    verbose=True,
+    pad=70,
+):
+    message("Help Menu", width=(pad * (4 / 3)) + 20)
+    m_menu = create_menu(
+        main_menu, headers=headers, use_headers=True, verbose=verbose, pad=pad
+    )
+    h_menu = create_menu(
+        help_menu, headers=headers, use_headers=False, verbose=verbose, pad=pad
+    )
     return (m_menu, h_menu)
+
 
 def show_help_menu():
     from cli_commands import CLI_COMMANDS, CLI_DEFAULT_COMMANDS
+
     create_help_menu(CLI_COMMANDS, CLI_DEFAULT_COMMANDS, pad=80)
+
 
 def show_help_menu_brief():
     from cli_commands import CLI_COMMANDS, CLI_DEFAULT_COMMANDS
-    create_menu([CLI_DEFAULT_COMMANDS[0]], use_headers = False, pad = 80)
+
+    create_menu([CLI_DEFAULT_COMMANDS[0]], use_headers=False, pad=80)
+
 
 def bold(string: str) -> str:
     """
@@ -132,6 +157,7 @@ def bold(string: str) -> str:
     """
     return f"\033[1m{string}\033[0m"
 
+
 def underline(string: str) -> str:
     """
     Underlines a string.
@@ -156,10 +182,12 @@ def underline(string: str) -> str:
     """
     return f"\033[4m{string}\033[0m"
 
+
 def reset_color():
     print("\033[0m", end="")
 
-def color(color: str, string: str, terminated:bool = True) -> str:
+
+def color(color: str, string: str, terminated: bool = True) -> str:
     """
         Applies color to a string.
 
@@ -184,19 +212,20 @@ def color(color: str, string: str, terminated:bool = True) -> str:
 
     Note
     -------------
-    This function uses the rgb_to_ansi and _get_hex functions, 
+    This function uses the rgb_to_ansi and _get_hex functions,
     which are not included in this snippet.
     """
     return rgb_to_ansi(string, _get_hex(Color(color)), terminated)
 
-def line(length:int = MAX_WIDTH, verbose:bool = False) -> str:
+
+def line(length: int = MAX_WIDTH, verbose: bool = False) -> str:
     """
     Formats a line.
 
     Args
     -------------
         - `length` (int, optional): The length of the line. Defaults to MAX_WIDTH.
-        - `verbose` (bool, optional): If set to a truth, the output will be printed to the 
+        - `verbose` (bool, optional): If set to a truth, the output will be printed to the
             console. Otherwise, it will be returned as a string. Defaults to False.
 
     Returns
@@ -215,7 +244,15 @@ def line(length:int = MAX_WIDTH, verbose:bool = False) -> str:
         print(content)
     return content
 
-def message(text: str, colr:str = "", width: int = round(MAX_WIDTH/2), verbose: bool = True, **kwargs):
+
+def message(
+    text: str,
+    colr: str = "",
+    width: int = round(MAX_WIDTH / 2),
+    verbose: bool = True,
+    end="",
+    **kwargs,
+):
     """
     Creates a centered message inside a box with a specified width.
 
@@ -223,7 +260,7 @@ def message(text: str, colr:str = "", width: int = round(MAX_WIDTH/2), verbose: 
     -------------
         - `text` (str): The message text to be centered.
         - `width` (int, optional): The total width of the box. The message text will be centered within this width. Defaults to half of MAX_WIDTH.
-        - `verbose` (bool, optional): If set to True, the function will print the output. 
+        - `verbose` (bool, optional): If set to True, the function will print the output.
             Otherwise, it will just return the string without printing. Defaults to True.
         - `**kwargs`: Arbitrary keyword arguments for the `tabulate` function.
 
@@ -242,17 +279,28 @@ def message(text: str, colr:str = "", width: int = round(MAX_WIDTH/2), verbose: 
 
     Note
     -------------
-    This function uses the `tabulate` function, which is not included in this snippet. 
+    This function uses the `tabulate` function, which is not included in this snippet.
     `tabulate` should be imported from the `tabulate` module before using this function.
     """
-    _width = round((width - len(text))/2) - 3
-    msg = tabulate([[f"<{'':>{_width}}{color(colr, text) if colr else text}{'':<{_width}} >"]], tablefmt='rounded_grid', **kwargs)
+    _width = round((width - len(text)) / 2) - 3
+    msg = tabulate(
+        [[f"<{'':>{_width}}{color(colr, text) if colr else text}{'':<{_width}} >"]],
+        tablefmt="rounded_grid",
+        **kwargs,
+    )
     if verbose:
         print(msg)
-    return "\n" + msg
+    return end + msg
 
 
-def table(data: list or dict, headers:list = None, verbose:bool = True, ansi=False, indent_level:int = 0, **kwargs):
+def table(
+    data: list or dict,
+    headers: list = None,
+    verbose: bool = True,
+    ansi=False,
+    indent_level: int = 0,
+    **kwargs,
+):
     """
     Formats a list or dictionary into a well-structured table.
 
@@ -285,7 +333,7 @@ def table(data: list or dict, headers:list = None, verbose:bool = True, ansi=Fal
     >>> ├───────┼────────┤
     >>> │    30 │ Bob    │
     >>> ╰───────┴────────╯
-    
+
     ```python
     data = {
         "days": [
@@ -303,18 +351,18 @@ def table(data: list or dict, headers:list = None, verbose:bool = True, ansi=Fal
     >>> ├───────┼───────┼───────┼───────┼───────┼───────┼───────┤
     >>> │     8 │     9 │    10 │    11 │    12 │    13 │    14 │
     >>> ╰───────┴───────┴───────┴───────┴───────┴───────┴───────╯
-    
+
     Note
     -------------
         This function uses the `tabulate` function, which should be imported from the `tabulate` module before using this function.
     """
     array = []
-    if isinstance(data, dict) or isinstance(data[0], dict) :
+    if isinstance(data, dict) or isinstance(data[0], dict):
         if headers is None:
             headers = sorted(set(key for d in data for key in d))
 
         for d in data:
-            d = ((h, d.get(h, '-')) for h in headers)
+            d = ((h, d.get(h, "-")) for h in headers)
 
         array = [[d[h] for h in headers] for d in data]
 
@@ -330,12 +378,13 @@ def table(data: list or dict, headers:list = None, verbose:bool = True, ansi=Fal
     else:
         headers = ()
 
-    msg = tabulate(array, headers=headers, tablefmt='rounded_grid', **kwargs)
-    msg = "\n".join("\t"*indent_level+line for line in msg.split("\n"))
+    msg = tabulate(array, headers=headers, tablefmt="rounded_grid", **kwargs)
+    msg = "\n".join("\t" * indent_level + line for line in msg.split("\n"))
 
     if verbose:
         print(msg)
     return msg
+
 
 def print_array(data: list, indentation_level: int = 0):
     """
@@ -359,6 +408,7 @@ def print_array(data: list, indentation_level: int = 0):
     """
     print(indent(json.dumps(data, indent=4), level=indentation_level))
 
+
 def print_dict(data: dict, indentation_level: int = 0):
     """
     Pretty prints a dictionary with specified indentation.
@@ -380,6 +430,7 @@ def print_dict(data: dict, indentation_level: int = 0):
     """
     print(indent(json.dumps(data, indent=4), level=indentation_level))
 
+
 def clear_terminal():
     """
     Clears the terminal screen.
@@ -391,10 +442,10 @@ def clear_terminal():
     ```
     The terminal screen will be cleared.
     """
-    os.system('cls' if os.name == 'nt' else 'clear')
+    os.system("cls" if os.name == "nt" else "clear")
 
 
-def rgb_to_ansi(text, c:str, terminated:bool = True):
+def rgb_to_ansi(text, c: str, terminated: bool = True):
     """
     Converts RGB color to the nearest equivalent ANSI color and applies it to a text string.
 
@@ -432,7 +483,10 @@ def rgb_to_ansi(text, c:str, terminated:bool = True):
     ansi_g = round(g / 255 * 5)
     ansi_b = round(b / 255 * 5)
 
-    return f"\033[38;5;{(16 + (36 * ansi_r) + (6 * ansi_g) + ansi_b)}m{text}" + ("\033[0m" if terminated else "")
+    return f"\033[38;5;{(16 + (36 * ansi_r) + (6 * ansi_g) + ansi_b)}m{text}" + (
+        "\033[0m" if terminated else ""
+    )
+
 
 def timer(func):
     """
@@ -454,13 +508,21 @@ def timer(func):
         ```
         When `my_function` is called, it will also print the time it took to execute.
     """
+
     def wrapper(*args, **kwargs):
         start_time = time.time()
         result = func(*args, **kwargs)
         end_time = time.time()
-        print(color("cyan", f"RUNTIME [ {func.__name__} ] {round(end_time - start_time, 4):>30} second(s)"))
+        print(
+            color(
+                "cyan",
+                f"RUNTIME [ {func.__name__} ] {round(end_time - start_time, 4):>30} second(s)",
+            )
+        )
         return result
+
     return wrapper
+
 
 def _get_hex(color: Color):
     """
@@ -506,8 +568,9 @@ def indent(text: str, level: int = 0) -> str:
     """
     msg = ""
     for line in text.split("\n"):
-        msg += "\t"*level + line + "\n"
+        msg += "\t" * level + line + "\n"
     return msg
+
 
 def gradient_text(text, value=None, colors=None, scale=100):
     """
@@ -518,48 +581,77 @@ def gradient_text(text, value=None, colors=None, scale=100):
     if value <= 0 or value > scale:
         value = 1
 
-
     # Calculate the gradient color
     if value <= (scale / 2):
         r = 250
-        g = 0 if value == 0 else round(255 * (value/scale)*2)  # gradient from 0 to 255
+        g = (
+            0 if value == 0 else round(255 * (value / scale) * 2)
+        )  # gradient from 0 to 255
     else:
-        r = round(510 - 255 * (value/scale)*2)  # gradient from 255 to 0
+        r = round(510 - 255 * (value / scale) * 2)  # gradient from 255 to 0
         g = 255
     b = 0  # keep blue at zero
 
-    
-    hex_color = '{:02x}{:02x}{:02x}'.format(r, g, b)
+    hex_color = "{:02x}{:02x}{:02x}".format(r, g, b)
 
     # colorize the text
     return rgb_to_ansi(text, hex_color)
 
-def print_loading(txt, _time=None, scale=None, characters = ['━'], loop = False, mult=0,gradient=False,screen_width=4, lock = None):
+
+def print_loading(
+    txt,
+    _time=None,
+    scale=None,
+    characters=["━"],
+    loop=False,
+    mult=0,
+    gradient=False,
+    screen_width=4,
+    lock=None,
+):
     if lock is not None:
         with lock:
-            print_loading(txt, _time=_time, scale=scale, characters = characters, loop = loop,mult=mult,gradient=gradient,screen_width=screen_width, lock = None)
+            print_loading(
+                txt,
+                _time=_time,
+                scale=scale,
+                characters=characters,
+                loop=loop,
+                mult=mult,
+                gradient=gradient,
+                screen_width=screen_width,
+                lock=None,
+            )
         return
 
     counter = 0
     if len(characters) == 1:
         size = os.get_terminal_size()
-        MAX_WIDTH = int(size.columns /screen_width)
+        MAX_WIDTH = int(size.columns / screen_width)
         MAX_HEIGHT = size.lines
-        temp = (characters[0] + ",")*MAX_WIDTH
+        temp = (characters[0] + ",") * MAX_WIDTH
         characters = temp.split(",")
     else:
         for i in range(mult):
             characters.extend(characters[::-1])
-    
-    scale = len(characters)*(2 if loop else 1) if scale is None else scale
+
+    scale = len(characters) * (2 if loop else 1) if scale is None else scale
     _time = len(characters) if _time is None else _time
-    _time_inc = _time/len(characters) / (2 if loop else 1)
+    _time_inc = _time / len(characters) / (2 if loop else 1)
 
     def print_loading_helper(text, counter):
         if gradient:
-            print(f'\r[{gradient_text(text, counter, scale=len(characters))}]{txt:>{len(txt)+3}}', end="", flush=True)
+            print(
+                f"\r[{gradient_text(text, counter, scale=len(characters))}]{txt:>{len(txt)+3}}",
+                end="",
+                flush=True,
+            )
         else:
-            print(f'{gradient_text(text, counter, scale=len(characters))}', end="", flush=True)
+            print(
+                f"{gradient_text(text, counter, scale=len(characters))}",
+                end="",
+                flush=True,
+            )
 
     def show(characters, j):
         if gradient:
@@ -576,17 +668,17 @@ def print_loading(txt, _time=None, scale=None, characters = ['━'], loop = Fals
         else:
             text = ""
             print("[", end="", flush=True)
-        
+
         counter = i
         print_loading_helper(text, counter)
         time.sleep(_time_inc)
         for j in range(i, len(characters)):
-            counter = show(characters,j)
-        
+            counter = show(characters, j)
+
         if loop:
             counter = i
-            for j in range(len(characters), i+1, -1):
-                counter = show(characters,j)
+            for j in range(len(characters), i + 1, -1):
+                counter = show(characters, j)
     if gradient:
         print()
     else:

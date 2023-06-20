@@ -1,27 +1,45 @@
 import random
 import string
 import time
-from lib_cli import print_array, color, bold, underline, print_dict, message, table, MAX_WIDTH, get_user_input, line, indent, timer, input_loop
+from lib_cli import (
+    print_array,
+    color,
+    bold,
+    underline,
+    print_dict,
+    message,
+    table,
+    MAX_WIDTH,
+    get_user_input,
+    line,
+    indent,
+    timer,
+    input_loop,
+)
 from node import *
 
 data = {
-    "words": ["hello", "world", "great", "day",],
+    "words": [
+        "hello",
+        "world",
+        "great",
+        "day",
+    ],
     "numbers": [1, 2, 3, 4, 5, 6, 7],
     "days": [
         ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
         [1, 2, 3, 4, 5, 6, 7],
-        [8, 9, 10, 11, 12, 13, 14]
+        [8, 9, 10, 11, 12, 13, 14],
     ],
-    "users" : [
-        {'name': 'Alice', 'age': 25},
-        {'name': 'Bob', 'age': 30}
-    ]
+    "users": [{"name": "Alice", "age": 25}, {"name": "Bob", "age": 30}],
 }
+
 
 def table_test():
     message("Table Test", width=MAX_WIDTH)
-    for key,value in data.items():
+    for key, value in data.items():
         table(value, verbose=True, indent_level=1, ansi=False)
+
 
 def print_test():
     message("Print Test", width=MAX_WIDTH)
@@ -30,32 +48,38 @@ def print_test():
     print("\n Dict")
     print_dict(data, indentation_level=1)
 
+
 def color_test():
     message("Color Test", width=MAX_WIDTH)
     colors = ["red", "yellow", "green", "cyan", "blue", "orange"]
     for c in colors:
         print("\t", f'{color(c, "Hello World"):<30}')
 
+
 def bold_test():
     message("Bold Test", width=MAX_WIDTH)
-    print("\t"+bold("Hello World") + "\t --> \tHello World")
+    print("\t" + bold("Hello World") + "\t --> \tHello World")
+
 
 def underline_test():
     message("Underline Test", width=MAX_WIDTH)
-    print("\t"+underline("Hello World") + "\t --> \tHello World")
+    print("\t" + underline("Hello World") + "\t --> \tHello World")
+
 
 def line_test():
     message("Line Test", width=MAX_WIDTH)
     line(verbose=True)
 
+
 def message_test():
     message("Message Test", width=MAX_WIDTH)
     a = ""
     a += message("Message, width=100", width=80, verbose=False)
-    a += message("width=60",width=60, verbose=False)
-    a += message("width=40",width=40, verbose=False)
-    a += message("width=20",width=20, verbose=False)
+    a += message("width=60", width=60, verbose=False)
+    a += message("width=40", width=40, verbose=False)
+    a += message("width=20", width=20, verbose=False)
     print(indent(a, 1))
+
 
 def timer_test():
     message("Timer Test", width=MAX_WIDTH)
@@ -72,15 +96,17 @@ def timer_test():
     message("Sleeping for 0.25 seconds", width=40)
     result = temp_test(0.25)
 
+
 def user_input_test():
     message("User Input Test", width=MAX_WIDTH)
     value = get_user_input("Enter Something")
     print("\t", value)
 
+
 def node_test():
     def random_char(y):
-        return ''.join(random.choice(string.ascii_letters) for x in range(y))
-    
+        return "".join(random.choice(string.ascii_letters) for x in range(y))
+
     def show_nodes(**kwargs):
         for i in range(2):
             node = Node(
@@ -100,8 +126,9 @@ def node_test():
     message("Node Test- show(basic=True)", width=MAX_WIDTH)
     show_nodes(basic=True)
 
+
 def cli_test():
-    """    
+    """
     commands = [
         ["underline", underline_test],
         ["bold", bold_test],
@@ -190,6 +217,7 @@ def cli_test():
     input_loop()
     # table(commands, headers=["Command", "Function"])
     # input_loop(commands)
+
 
 # underline_test()
 # bold_test()
