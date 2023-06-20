@@ -39,20 +39,6 @@ DEFAULT_SCHEMA = {
 }
 
 class Protocol:
-
-
-    # DEFAULT_COMMUNICATION_SCHEMA = {
-    #     "type": "object",
-    #     "properties": {
-    #         Felid.TYPE.name:       {"type": "string"},
-    #         Felid.ID.name:         {"type": "string"},
-    #         Felid.METHOD.name:     {"type": "string"},
-    #         Felid.BODY.name:       {"type": "string"},
-    #         Felid.STATE.name:      {"type": "string","enum": [t.value for t in ProtocolState] },
-    #         # "friends": {"type": "array", "items": {"type": "string"}},
-    #     },
-    #     "required": [Felid.TYPE.name, Felid.ID.name, Felid.METHOD.name],
-    # }
         def __init__(self, 
                         protocol_type: ProtocolType or str = ProtocolType.DIRECT, 
                         method: ProtocolMethod or str = ProtocolMethod.DEFAULT, 
@@ -133,8 +119,6 @@ class Protocol:
             method_size = len(self[Field.METHOD])
 
             broadcast_requires_body = self[Field.TYPE] == ProtocolType.BROADCAST.value and len(self[Field.BODY]) > 0
-            # has_content = content_size > 0
-            # print(broadcast_requires_body or self[Field.TYPE] == ProtocolType.DIRECT)
             return  broadcast_requires_body or self[Field.TYPE] == ProtocolType.DIRECT.value
             
         # Returns True if some string command matches the command for this object

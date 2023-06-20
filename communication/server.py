@@ -12,7 +12,7 @@ import lib_cli as CLI
 import select
 import sys
 
-LOG_PADDING = 20
+LOG_PADDING = 0
 LOG = True
 
 
@@ -63,10 +63,6 @@ class Server:
                         break
             except Exception:
                 print("Client disconnected")
-                # with self.locks['clients']:
-                    # self.clients.remove(client)
-                    # client.close()
-                # self.broadcast(Protocol(protocol_type = ProtocolType.BROADCAST, content = "Client Disconnected"))
                 break
 
     def receive(self):
@@ -87,7 +83,6 @@ class Server:
     def initialize_client(self, client):
         self.send(client, Protocols.INITIALIZE)
         response = self.receive_data(client)
-        # response = json.loads(self.receive_data(client))
         if response == Protocols.DISCONNECT:
             client.shutdown(0)
             client.close()
@@ -108,10 +103,8 @@ class Server:
             node = client if type(client) is Node else None)
 
         if type(client) is Node:
-            # print("sending")
             client.socket.sendall(message)
         else:
-            # print("sending")
             client.sendall(message)
 
     def receive_data(self, client, buff_size=1024, decoding='ascii') -> Protocol:
@@ -123,19 +116,19 @@ class Server:
     
     def log_send(self, message, addr):
         if LOG: 
-            output = f"[LOG] {CLI.color('paleturquoise', 'SENDING:')}\n"
+            output = f"[LOG] {CLI.color('steelblue', 'SENDING:')}\n"
             output += f'{str(message):<{LOG_PADDING}} {"-->":<{LOG_PADDING}} {addr}\n'
             self.print_message(output, clr="gray")
 
     def log_receive(self, message, addr):
         if LOG: 
-            output = f"[LOG] {CLI.color('orange', 'RECEIVED:')}\n"
+            output = f"[LOG] {CLI.color('tomato', 'RECEIVED:')}\n"
             output += f'{str(message):<{LOG_PADDING}} {"<--":<{LOG_PADDING}} {addr}\n'
             self.print_message(output, clr="gray")
 
     def get_socket_address(self, socket_obj: socket.socket) -> str:
         peer_name = socket_obj.getpeername()
-        return f'{str(peer_name[0])} : {str(peer_name[1])}'
+        return CLI.color('aquamarine', f'{str(peer_name[0])} : {str(peer_name[1])}')
 
     def disconnect_client(self, client:Node):
         with self.locks['clients']:

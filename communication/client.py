@@ -16,8 +16,8 @@ import lib_cli as CLI
 from protocol import Protocols, Protocol, ProtocolState, ProtocolMethod, ProtocolType, Field
 
 
-LOG_PADDING = 20
-LOG = True
+LOG_PADDING = 0
+LOG = False
 
 
 class Client:
@@ -163,14 +163,14 @@ class Client:
 
     def log_send(self, message):
         if LOG: 
-            output = f"[LOG] {CLI.color('paleturquoise', 'SENDING:')}\n"
-            output += f'{self.get_socket_address(self.sock)}\t{"-->"} {str(message):<{LOG_PADDING}}\n'
+            output = f"[LOG] {CLI.color('steelblue', 'SENDING:')}\n"
+            output += f'{self.get_socket_address(self.sock)} {"-->"} {str(message):<{LOG_PADDING}}\n'
             self.print_message(output, clr="gray")
 
     def log_receive(self, message):
         if LOG: 
-            output = f"[LOG] {CLI.color('orange', 'RECEIVED:')}\n"
-            output += f'{self.get_socket_address(self.sock)}\t{"<--"} {str(message):<{LOG_PADDING}}\n'
+            output = f"[LOG] {CLI.color('tomato', 'RECEIVED:')}\n"
+            output += f'{self.get_socket_address(self.sock)} {"<--"} {str(message):<{LOG_PADDING}}\n'
             self.print_message(output, clr="gray")
 
 
