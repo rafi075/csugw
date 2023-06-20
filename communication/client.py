@@ -1,197 +1,213 @@
 #!/bin/python3
-from random import randrange
-import threading
 import argparse
-import socket as Socket
-from socket import socket as sock
-from time import sleep
-from protocol import Protocol as NET
-from protocol import Command as NET_CMD
-import lib_cli as CLI
+import json
 import select
+import selectors
+import socket
 import sys
+import threading
+from random import randrange
+import traceback
 
-# For testing
-from inputimeout import inputimeout, TimeoutOccurred
+import jsonschema
+
+import lib_cli as CLI
+
+from protocol import Protocols, Protocol, ProtocolState, ProtocolMethod, ProtocolType, Field
 
 
-pad = 20
+LOG_PADDING = 20
+LOG = True
 
 
 class Client:
-    def __init__(self, ID:str, host='127.0.0.1', port=5000):
-        self.ID = ID
-        
-        try:
-            self.client = sock(Socket.AF_INET, Socket.SOCK_STREAM)
-            self.client.settimeout(1.0)
-            self.client.connect((host, port))
-        except Socket.error as e:
-            print(str(e))
-        
+    def __init__(self, client_id: str, host='127.0.0.1', port=5000):
+        self.id = client_id
         self.running = True
         self.print_lock = threading.Lock()
         self.exit_event = threading.Event()
+        self.initialized = False
+        self.sock = None
 
+        self.selector_sock = selectors.DefaultSelector()
+        self.selector_input = selectors.DefaultSelector()
 
-    def print(self,*args, **kwargs):
-        kwargs = {**{'sep':' ','end':'\n'},**kwargs}
-        msg = ""
-        for arg in args:
-            msg += str(arg) + kwargs['sep']
+        try:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.settimeout(1.0)
+            self.sock.connect((host, port))
+        except socket.error as err:
+            print(str(err))
 
-        msg = CLI.color(kwargs["clr"], msg) if "clr"in kwargs else msg
+    def print_message(self, *args, **kwargs):
+        kwargs = {**{'sep': ' ', 'end': '\n'}, **kwargs}
+        msg = "".join(str(arg) + kwargs['sep'] for arg in args)
+        msg = CLI.color(kwargs["clr"], msg) if "clr" in kwargs else msg
         kwargs.pop("clr", "")
         with self.print_lock:
             print(msg, **kwargs)
 
-
-
-    def disconnect(self, message, receiving=False):
-        if NET_CMD.CONFIRMED in message:
-            self.print()
-            self.print(CLI.message("Disconnected From Server", "red", verbose=False))
-            self.print("Press enter to continue...",clr="gray")
-            self.running = False
-            self.client.shutdown(0)
-            self.client.close()
-            exit(0)
-        else:
-            self.send(NET.DISCONNECT.msg())
-            if not receiving:
-                exit(0)
-
-
-
-    def process_message(self, message, receiving = False):
-        if not message:
-            return False
-        
-        if message == NET.INITIALIZE:
-            if NET_CMD.CONFIRMED in message:
-                self.print("Initialization Confirmation Received!", clr="gray")
-                self.print(CLI.message("Initialization Successful", "green", verbose=False))
-            else:
-                self.send(NET.INITIALIZE.msg())
-            return False
-            
-        elif message == NET.DISCONNECT:
-            self.send(NET.DISCONNECT.msg())
+    def disconnect(self):
+            self.send(Protocols.DISCONNECT.msg())
             self.running = False
             self.exit_event.set()
+
+    def process_message(self, message:Protocol, is_receiving=False):
+        if not message:
+
+            self.print_message("Empty Message", clr="red")
+            print(message.__str__())
+            return False
+
+        if message == Protocols.INITIALIZE:
+            if not self.initialized:
+                self.send(Protocols.INITIALIZE)
+                self.initialized = True
+            else:
+                self.print_message(CLI.message("Initialization Successful", "green", verbose=False))
+            return False
+
+        if message == Protocols.DISCONNECT:
+            self.disconnect()
             return True
 
-        elif not receiving:
+        elif not is_receiving:
             self.send(message)
             return False
 
-
-
     def receive(self):
+        self.selector_sock.register(self.sock, selectors.EVENT_READ, self.receive_data2)
         while not self.exit_event.is_set():
+            events = self.selector_sock.select(timeout=0)
             try:
-                if self.isActive(self.client):
-                    message = self.rec()
-                    if self.process_message(message, receiving=True):
-                        break
-            except Socket.timeout:
+                for key, mask in events:
+                    callback = key.data
+                    callback(key.fileobj, mask)
+
+            except socket.timeout:
                 continue
             except KeyboardInterrupt:
-                self.client.close()
+                self.sock.close()
                 break
-            except Exception as e:
-                self.print("An error occured!", clr="gray")
-                self.print(e.with_traceback())
-                self.print(e)
-                self.client.close()
+            except Exception as err:
+                self.print_message("An error occured!", clr="gray")
+                self.print_message(traceback.format_exc())
+                self.print_message(err)
+                self.sock.close()
                 self.running = False
                 break
 
     def write(self):
         while not self.exit_event.is_set():
             try:
-                # For testing only
-                # Check if input is available
-                if self.isActive(sys.stdin):
-                    message  = input()
-                    if self.process_message(message, receiving=False):
-                        break
-            except TimeoutOccurred:
-                continue
+                if self.is_active(sys.stdin):
+                    message = input()
+                    if Protocol.has_key(message, ProtocolMethod):
+                        message = Protocol(method = message)
+                        if self.process_message(message, is_receiving=False):
+                            break
+                    else:
+                        print("Invalid METHOD:\t", f'"{message}"\n')
             except KeyboardInterrupt:
                 break
-            except ValueError as e:
+            except ValueError:
                 break
-            except Exception as e:
-                self.print("An error occured!", clr="gray")
-                self.print(type(e))
-                # self.print(e.with_traceback())
-                self.print(e)
-                self.client.close()
+            except Exception as err:
+                self.print_message("An error occured!", clr="red")
+                self.print_message(traceback.format_exc())
+                self.print_message(err)
+                self.sock.close()
                 self.running = False
                 break
 
-    def isActive(self, stream, timeout = 1):
+    def is_active(self, stream, timeout=1):
         ready, _, _ = select.select([stream], [], [], timeout)
         return ready
 
+    def send(self, message, sign: bool = True, encoding: str = 'ascii'):
+        if type(message) is Protocol:
+            message = message.to_network(encoding=encoding)
+            self.log_send(message)
+            self.sock.send(message)
 
-    def send(self, command:NET_CMD, encoding:str = 'ascii'):
-        msg = command.msg()
-        self.print(f'{"[LOG] SENDING:":<{pad}} {msg:<{pad}} --> {self.sock_to_str(self.client):>{pad}}',clr="gray")
-        self.client.send(msg.encode(encoding))
-
-    def send(self, message:str, sign:bool = True, encoding:str = 'ascii'):
-        if message:
-            self.print(f'{"[LOG] SENDING:":<{pad}} {message:<{pad}} --> {self.sock_to_str(self.client):>{pad}}',clr="gray")
-            message = f'{self.ID}:{message}' if sign else message
-            self.client.send(message.encode(encoding))
-
-    def rec(self, buff_size:int = 1024, decoding:str = 'ascii') -> str:
-        if not self.client:
+    def receive_data(self, buffer_size: int = 1024, decoding: str = 'ascii') -> Protocol:
+        if not self.sock:
             return ""
-        message = self.client.recv(buff_size).decode(decoding)
+
+        message =  self.sock.recv(buffer_size).decode(decoding)
+
+        if len(message) == 0:
+            print("Emppty Message from ", self.get_socket_address(self.sock), f'"{message}"')
+            return ""
+        
+        print("Message", f'"{message}"')
+        message:Protocol = Protocol.from_network(message)    
+
         if message:
-            r_message = r"{}".format(message)
-            self.print(f'{"[LOG] RECEIVED:":<{pad}} {self.sock_to_str(self.client):<{pad}} <-- {r_message:>{pad}}',clr="gray")
-            return message
-    
-    def sock_to_str(self, s:sock) -> str:
-        pname = s.getpeername()
-        return f'{str(pname[0])} : {str(pname[1])}'
+            formatted_message = r"{}".format(message)
+            self.log_receive(formatted_message)
+        return message
+
+
+    def receive_data2(self, sock, mask):
+        message =  sock.recv(1024).decode('ascii')
+        if not message:
+            return
+        
+        message:Protocol = Protocol.from_network(message)    
+
+        if message:
+            formatted_message = r"{}".format(message)
+            self.log_receive(formatted_message)
+        self.process_message(message, is_receiving=True)
+
+    def log_send(self, message):
+        if LOG: 
+            output = f"[LOG] {CLI.color('paleturquoise', 'SENDING:')}\n"
+            output += f'{self.get_socket_address(self.sock)}\t{"-->"} {str(message):<{LOG_PADDING}}\n'
+            self.print_message(output, clr="gray")
+
+    def log_receive(self, message):
+        if LOG: 
+            output = f"[LOG] {CLI.color('orange', 'RECEIVED:')}\n"
+            output += f'{self.get_socket_address(self.sock)}\t{"<--"} {str(message):<{LOG_PADDING}}\n'
+            self.print_message(output, clr="gray")
+
+
+    def get_socket_address(self, socket_obj: socket.socket) -> str:
+        peer_name = socket_obj.getpeername()
+        return f'{str(peer_name[0])} : {str(peer_name[1])}'
 
     def run(self):
         receive_thread = threading.Thread(target=self.receive)
-        receive_thread.start()
-
         write_thread = threading.Thread(target=self.write)
+
+        receive_thread.start()
         write_thread.start()
 
         for thread in [receive_thread, write_thread]:
             try:
                 thread.join()
             except KeyboardInterrupt:
-                self.stop(thread)
-            except Exception as e:
-                e.with_traceback()
-                self.stop(thread)
+                self.exit_event.set()
+            except Exception as err:
+                print(err.with_traceback())
+                self.exit_event.set()
 
 
-
-if __name__ == "__main__":
-
+def get_args():
     parser = argparse.ArgumentParser(description="This is a program that accepts IP address and Port number")
-
     parser.add_argument('-ip', '--IPv4Address', type=str, default='127.0.0.1', 
                         help='An IPv4 address in the format xxx.xxx.xxx.xxx')
     parser.add_argument('-p', '--Port', type=int, default=5000, 
                         help='A port number')
+    return parser.parse_args()
 
-    args = parser.parse_args()
-    # ID = input("ID: ")
+
+if __name__ == "__main__":
+    args = get_args()
     CLI.clear_terminal()
-    ID = str(randrange(0, 1000))
-    client = Client(ID, host=args.IPv4Address, port=args.Port)
+    client_id = str(randrange(0, 1000))
+    client = Client(client_id, host=args.IPv4Address, port=args.Port)
     client.run()
     exit(0)
-
