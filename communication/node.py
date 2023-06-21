@@ -195,9 +195,12 @@ class HelpMenu:
         return dict_attributes + attributes
 
     def get_standard_attribute(self, attr: str, value: any) -> list[str, str]:
+        output = value
+        if type(value) == socket.socket:
+            output = f"SRC: {value.getpeername()[0]}:{value.getpeername()[1]}"
         return [
             f"{attr:<{int(HelpMenu.SPACING/2 + 9)}} =",
-            f"{str(value):<{int(HelpMenu.SPACING/2)}}{'⠀'}",
+            f"{str(output):<{int(HelpMenu.SPACING/2)}}{'⠀'}",
         ]
 
     def get_list_attribute(self, attr: str, value: any) -> list[str, str]:
@@ -211,4 +214,4 @@ class HelpMenu:
         return [prefix, *item_name]
 
     def get_name_or_val(self, value) -> str:
-        return value.__name__ if hasattr(value, "__name__") else value
+        return value.__name__ if hasattr(value, "__name__") else output

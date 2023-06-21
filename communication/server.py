@@ -19,6 +19,7 @@ import lib_cli as CLI
 import select
 import sys
 
+LOG_MESSAGE_SIZE = 75.0
 LOG_PADDING = 0
 LOG = True
 
@@ -39,6 +40,7 @@ class Server:
             "thread": threading.Lock(),
         }
         self.exit_event = threading.Event()
+        self.custom_commands = []
 
     def broadcast(self, message, exclude=None):
         if exclude and exclude in self.clients and len(self.clients) == 1:
@@ -71,14 +73,11 @@ class Server:
                     message = self.receive_data(client.socket)
                     if self.process_message(client, message):
                         break
-            except Exception:
-                self.print_message(
-                    CLI.message(
-                        f"CLIENT DISCONNECTED: {str(client._strIPPORT)}",
-                        "yellow",
-                        verbose=False,
-                    )
-                )
+            except Exception as e:
+                # TODO: Exception thrown on DC
+                # self.print_caution("Exception in handle_client")
+                # self.print_thread(e)
+                self.disconnect_client(client)
                 break
 
     def receive(self):
@@ -112,16 +111,13 @@ class Server:
         client_node = Node(client, response["ID"])
         self.clients.append(client_node)
         CLI.line()
-        self.print_message(
-            CLI.message(
-                f"Client Connected: {str(client.getpeername())}", "green", verbose=False
-            )
-        )
+        self.print_ok(f"CLIENT CONNECTED: {str(client_node._strIPPORT)}")
+
         return client_node
 
     def send_data(self, client, message: Protocol, encoding="ascii"):
         addr = (
-            client._strIPPORT
+            CLI.color("aquamarine", client._strIPPORT)
             if type(client) is Node
             else self.get_socket_address(client)
         )
@@ -150,32 +146,38 @@ class Server:
         if LOG:
             output = f"[LOG] {CLI.color('steelblue', 'SENDING:')}\n"
             output += f'{str(message):<{LOG_PADDING}} {"-->":<{LOG_PADDING}} {addr}\n'
-            self.print_message(output, clr="gray")
+            self.print_thread(output, clr="gray")
 
     def log_receive(self, message, addr):
         if LOG:
             output = f"[LOG] {CLI.color('tomato', 'RECEIVED:')}\n"
             output += f'{str(message):<{LOG_PADDING}} {"<--":<{LOG_PADDING}} {addr}\n'
-            self.print_message(output, clr="gray")
+            self.print_thread(output, clr="gray")
 
     def get_socket_address(self, socket_obj: socket.socket) -> str:
         peer_name = socket_obj.getpeername()
         return CLI.color("aquamarine", f"{str(peer_name[0])} : {str(peer_name[1])}")
 
     def disconnect_client(self, client: Node):
-        with self.locks["clients"]:
-            # self.send(client.socket, Protocols.DISCONNECT(Status.CONFIRM.value, client))
+        try:
             self.send_data(client.socket, Protocols.DISCONNECT)
             client.close()
+        except:
+            pass
+        with self.locks["clients"]:
             self.clients.remove(client)
-        self.broadcast(f"\nLEFT: {client.ID}\n")
+
+        self.print_caution(f"CLIENT DISCONNECTED: {str(client._strIPPORT)}")
+        # self.broadcast(f"\nLEFT: {client.ID}\n")
 
     def stop(self):
         message = Protocols.DISCONNECT
         message[ProtocolType] = ProtocolType.BROADCAST
         message[Field.ID] = "Server"
-        self.print_message(CLI.message(f"STOPPING SERVER...", "yellow", verbose=False))
+
+        self.print_caution("STOPPING SERVER...")
         self.broadcast(message)
+        self.running = False
         self.exit_event.set()
         with self.locks["clients"]:
             for client in self.clients:
@@ -187,13 +189,11 @@ class Server:
                     thread.join()
 
         self.server.close()
-        self.print_message(CLI.message(f"SERVER SHUTDOWN", "red", verbose=False))
+        self.print_error("SERVER SHUTDOWN")
 
     def show_clients(self):
         if len(self.clients) == 0:
-            self.print_message(
-                CLI.message("NO CLIENTS CONNECTED", "red", verbose=False)
-            )
+            self.print_error("NO CLIENTS CONNECTED")
             return
 
         client_info = []
@@ -202,17 +202,25 @@ class Server:
         data = [list(client_info[0].keys())] + [
             list(entry.values()) for entry in client_info
         ]
-        self.print_message(CLI.message(f"Connected Clients", verbose=False))
-        CLI.table(data)
+        self.print_("Connected Clients")
+        CLI.table(data, showindex=True)
+
+    def show_client(self, client:int or str):
+        if type(client) is str:
+            for node in self.clients:
+                if node.ID == client:
+                    node.show()
+
+        if str(client).isdigit():
+            client = int(client)
+            if client >=0 and client < len(self.clients):
+                self.clients[client].show()
+            else:
+                self.print_error("INVALID CLIENT INDEX")
 
     def run(self):
         CLI.clear_terminal()
-        # self.print_message("TEST")
-        self.print_message(
-            CLI.message(
-                f"SERVER STARTED {self.host}:{self.port}", "green", verbose=False
-            )
-        )
+        self.print_ok(f"SERVER STARTED {self.host}:{self.port}")
         self.server.listen()
         self.threads.extend(
             [
@@ -229,12 +237,12 @@ class Server:
             except KeyboardInterrupt:
                 break
             except Exception as e:
-                self.print_message(CLI.message(f"SERVER ERROR", "red", verbose=False))
+                self.print_error("SERVER ERROR")
                 print(e)
 
         # self.stop()
 
-    def print_message(self, *args, **kwargs):
+    def print_thread(self, *args, **kwargs):
         kwargs = {**{"sep": " ", "end": "\n"}, **kwargs}
         msg = "".join(str(arg) + kwargs["sep"] for arg in args)
         msg = CLI.color(kwargs["clr"], msg) if "clr" in kwargs else msg
@@ -242,17 +250,78 @@ class Server:
         with self.locks["print"]:
             print(msg, **kwargs)
 
+    def print_error(self, message):
+        self.print_thread(
+            CLI.message(message, "red", verbose=False, width_fraction=LOG_MESSAGE_SIZE)
+        )
+
+    def print_caution(self, message):
+        self.print_thread(
+            CLI.message(
+                message, "yellow", verbose=False, width_fraction=LOG_MESSAGE_SIZE
+            )
+        )
+
+    def print_ok(self, message):
+        self.print_thread(
+            CLI.message(message, "lime", verbose=False, width_fraction=LOG_MESSAGE_SIZE)
+        )
+
+    def print_(self, message):
+        self.print_thread(
+            CLI.message(message, "lime", verbose=False, width_fraction=LOG_MESSAGE_SIZE)
+        )
+
     def command_line(self):
         while not self.exit_event.is_set():
             ready_to_read, _, _ = select.select([sys.stdin], [], [], 1)
             if ready_to_read:
                 message = input()
+
+                if self.commands(message) == 123:
+                    continue
+
                 message = Protocol(content=message, method=message)
-                if message == Protocols.DISCONNECT:
-                    self.stop()
-                    exit(0)
-                elif message == Protocols.SHOW:
-                    self.show_clients()
+                # if message == Protocols.DISCONNECT:
+                    # self.stop()
+                # if message == Protocols.SHOW:
+                    # self.show_clients()
+
+
+    def commands(self, user_input:str):
+        from cli_commands import CLI_DEFAULT_COMMANDS, CLI_COMMANDS
+        self.custom_commands = CLI_COMMANDS
+        input_segments = user_input.split(" ")
+        for command in self.custom_commands + CLI_DEFAULT_COMMANDS:
+            if input_segments[0] in command["Commands"]:
+
+
+                if hasattr(command["Function"], "__name__"):
+                    need_self = command["Function"].__name__ in dir(Server)
+                else:
+                    need_self = False
+
+
+                if command["Parameters"] > 0:
+                    # return command["Function"](self, *command["Parameters"]) if need_self else command["Function"](*command["Parameters"])
+                    return command["Function"](self, *input_segments[1:]) if need_self else command["Function"](*input_segments[1:])
+                    # return command["Function"](self, *command["Parameters"]) if need_self else command["Function"](*command["Parameters"])
+                elif len(input_segments) > 0:
+                    return command["Function"](self, *input_segments[1:]) if need_self else command["Function"](*input_segments[1:])
+                else:
+                    return command["Function"](self) if need_self else command["Function"]()
+        else:
+            print(f"Command '{input_segments}' not found.")
+        return 123
+
+
+    def show_help_menu(self):
+        # print("Available commands:")
+        from cli_commands import CLI_DEFAULT_COMMANDS
+        results = CLI.create_help_menu(self.custom_commands, CLI_DEFAULT_COMMANDS, verbose=False)
+        self.print_thread(results[0])
+        self.print_thread(results[1])
+        
 
 
 if __name__ == "__main__":

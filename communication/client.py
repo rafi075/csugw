@@ -7,6 +7,7 @@ import socket
 import sys
 import threading
 from random import randrange
+import time
 import traceback
 
 import jsonschema
@@ -24,6 +25,7 @@ from protocol import (
 
 
 LOG_PADDING = 0
+LOG_MESSAGE_SIZE = 75.0
 LOG = False
 
 
@@ -39,30 +41,27 @@ class Client:
         self.selector_sock = selectors.DefaultSelector()
         self.selector_input = selectors.DefaultSelector()
 
-        try:
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sock.settimeout(1.0)
-            self.sock.connect((host, port))
-        except socket.error as err:
-            print(str(err))
-
-    def print_message(self, *args, **kwargs):
-        kwargs = {**{"sep": " ", "end": "\n"}, **kwargs}
-        msg = "".join(str(arg) + kwargs["sep"] for arg in args)
-        msg = CLI.color(kwargs["clr"], msg) if "clr" in kwargs else msg
-        kwargs.pop("clr", "")
-        with self.print_lock:
-            print(msg, **kwargs)
+        connected = False
+        wait_time = 5
+        while not connected:
+            try:
+                self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.sock.settimeout(1.0)
+                self.sock.connect((host, port))
+                connected = True
+            except socket.error as err:
+                self.print_caution(f"Unable to resolve IP address, retrying in {wait_time} second(s)...")
+                time.sleep(wait_time)
 
     def disconnect(self):
-        self.send_data(Protocols.DISCONNECT.msg())
+        self.send_data(Protocols.DISCONNECT)
+        self.print_error("TERMINATED BY SERVER")
         self.running = False
         self.exit_event.set()
 
     def process_message(self, message: Protocol, is_receiving=False):
         if not message:
-            self.print_message("Empty Message", clr="red")
-            print(message.__str__())
+            self.print_caution("GOT EMPTY MESSAGE")
             return False
 
         if message == Protocols.INITIALIZE:
@@ -70,9 +69,7 @@ class Client:
                 self.send_data(Protocols.INITIALIZE)
                 self.initialized = True
             else:
-                self.print_message(
-                    CLI.message("Initialization Successful", "green", verbose=False)
-                )
+                self.print_ok("INITIALIZATION SUCCESSFUL")
             return False
 
         if message == Protocols.DISCONNECT:
@@ -98,10 +95,11 @@ class Client:
                 self.sock.close()
                 break
             except Exception as err:
-                self.print_message("An error occured!", clr="gray")
-                self.print_message(traceback.format_exc())
-                self.print_message(err)
+                self.print_error("RECEIVE ERROR")
+                self.print_thread(err)
+                self.print_thread(traceback.format_exc())
                 self.sock.close()
+                self.exit_event.set()
                 self.running = False
                 break
 
@@ -121,10 +119,11 @@ class Client:
             except ValueError:
                 break
             except Exception as err:
-                self.print_message("An error occured!", clr="red")
-                self.print_message(traceback.format_exc())
-                self.print_message(err)
+                self.print_error("COMMAND LINE ERROR")
+                self.print_thread(err)
+                self.print_thread(traceback.format_exc())
                 self.sock.close()
+                self.exit_event.set()
                 self.running = False
                 break
 
@@ -178,17 +177,17 @@ class Client:
         if LOG:
             output = f"[LOG] {CLI.color('steelblue', 'SENDING:')}\n"
             output += f'{self.get_socket_address(self.sock)} {"-->"} {str(message):<{LOG_PADDING}}\n'
-            self.print_message(output, clr="gray")
+            self.print_thread(output, clr="gray")
 
     def log_receive(self, message):
         if LOG:
             output = f"[LOG] {CLI.color('tomato', 'RECEIVED:')}\n"
             output += f'{self.get_socket_address(self.sock)} {"<--"} {str(message):<{LOG_PADDING}}\n'
-            self.print_message(output, clr="gray")
+            self.print_thread(output, clr="gray")
 
     def get_socket_address(self, socket_obj: socket.socket) -> str:
         peer_name = socket_obj.getpeername()
-        return f"{str(peer_name[0])} : {str(peer_name[1])}"
+        return CLI.color("aquamarine", f"{str(peer_name[0])} : {str(peer_name[1])}")
 
     def run(self):
         receive_thread = threading.Thread(target=self.receive)
@@ -205,6 +204,26 @@ class Client:
             except Exception as err:
                 print(err.with_traceback())
                 self.exit_event.set()
+
+    def print_thread(self, *args, **kwargs):
+        kwargs = {**{"sep": " ", "end": "\n"}, **kwargs}
+        msg = "".join(str(arg) + kwargs["sep"] for arg in args)
+        msg = CLI.color(kwargs["clr"], msg) if "clr" in kwargs else msg
+        kwargs.pop("clr", "")
+        with self.print_lock:
+            print(msg, **kwargs)
+
+    def print_error(self, message):
+        self.print_thread(CLI.message(message, "red", verbose=False, width_fraction=LOG_MESSAGE_SIZE))
+
+    def print_caution(self, message):
+        self.print_thread(CLI.message(message, "yellow", verbose=False, width_fraction=LOG_MESSAGE_SIZE))
+        
+    def print_ok(self, message):
+        self.print_thread(CLI.message(message, "lime", verbose=False, width_fraction=LOG_MESSAGE_SIZE))
+
+    def print_(self, message):
+        self.print_thread(CLI.message(message, "lime", verbose=False, width_fraction=LOG_MESSAGE_SIZE))
 
 
 def get_args():

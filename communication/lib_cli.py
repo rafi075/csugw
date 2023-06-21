@@ -250,6 +250,7 @@ def message(
     colr: str = "",
     width: int = round(MAX_WIDTH / 2),
     verbose: bool = True,
+    width_fraction: float = 50.0,
     end="",
     **kwargs,
 ):
@@ -260,6 +261,7 @@ def message(
     -------------
         - `text` (str): The message text to be centered.
         - `width` (int, optional): The total width of the box. The message text will be centered within this width. Defaults to half of MAX_WIDTH.
+        - `width_fraction` (float, optional): Optional fraction for width out of 100
         - `verbose` (bool, optional): If set to True, the function will print the output.
             Otherwise, it will just return the string without printing. Defaults to True.
         - `**kwargs`: Arbitrary keyword arguments for the `tabulate` function.
@@ -282,6 +284,9 @@ def message(
     This function uses the `tabulate` function, which is not included in this snippet.
     `tabulate` should be imported from the `tabulate` module before using this function.
     """
+    if width_fraction != 50.0:
+        width = round((MAX_WIDTH / 100) * width_fraction)
+
     _width = round((width - len(text)) / 2) - 3
     msg = tabulate(
         [[f"<{'':>{_width}}{color(colr, text) if colr else text}{'':<{_width}} >"]],

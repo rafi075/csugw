@@ -1,25 +1,25 @@
-from server import show_clients, show_client, shutdown, show_server_status
+from server import Server
 from lib_cli import create_menu, clear_terminal, show_help_menu
 
-CLI_ARGS = {}
+# CLI_ARGS = {}
 CLI_COMMANDS = [
     {
         "Commands": ["clients", "show_clients"],
         "Description": "Displays an overview of all clients connected to the server.",
-        "Function": show_clients,
-        "Parameters": [],
+        "Function": Server.show_clients,
+        "Parameters": 0,
     },
     {
         "Commands": ["client", "show_client"],
         "Description": "Displays an overview of the connected client at the given index.",
-        "Function": show_client,
-        "Parameters": [],
+        "Function": Server.show_client,
+        "Parameters": 1,
     },
     {
-        "Commands": ["sstat", "server_status"],
-        "Description": "Displays server status.",
-        "Function": show_server_status,
-        "Parameters": [],
+        "Commands": ["exit", "kill"],
+        "Description": "Terminates all clients and the server",
+        "Function": Server.stop,
+        "Parameters": 0,
     },
 ]
 
@@ -28,26 +28,26 @@ CLI_DEFAULT_COMMANDS = [
     {
         "Commands": ["help", "h", "?", "--help", "-h"],
         "Description": "Displays help menu",
-        "Function": show_help_menu,
-        "Parameters": [],
+        "Function": Server.show_help_menu,
+        "Parameters": 0,
     },
     {
         "Commands": ["clear", "cls"],
         "Description": "Clears the terminal",
         "Function": clear_terminal,
-        "Parameters": [],
+        "Parameters": 0,
     },
     {
         "Commands": ["back", "return"],
         "Description": "Exits the current menu",
         "Function": lambda: "break",
-        "Parameters": [],
+        "Parameters": 0,
     },
     {
         "Commands": ["exit", "quit", "kill", "q"],
         "Description": "Exits the program",
-        "Function": shutdown,
-        "Parameters": [],
+        "Function": Server.stop,
+        "Parameters": 1,
     },
 ]
 
