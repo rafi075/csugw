@@ -18,7 +18,7 @@ CLI_COMMANDS = [
     {
         "Commands": ["exit", "kill"],
         "Description": "Terminates all clients and the server",
-        "Function": Server.stop,
+        "Function": Server.shutdown,
         "Parameters": 0,
     },
 ]
@@ -46,7 +46,7 @@ CLI_DEFAULT_COMMANDS = [
     {
         "Commands": ["exit", "quit", "kill", "q"],
         "Description": "Exits the program",
-        "Function": Server.stop,
+        "Function": Server.shutdown,
         "Parameters": 1,
     },
 ]

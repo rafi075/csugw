@@ -26,8 +26,10 @@ from protocol import (
 
 LOG_PADDING = 0
 LOG_MESSAGE_SIZE = 75.0
-LOG = False
+LOG = True
 
+
+#TODO: Add thread for rely connections to neighbor nodes
 
 class Client:
     def __init__(self, client_id: str, host="127.0.0.1", port=5000):
@@ -59,7 +61,7 @@ class Client:
         self.running = False
         self.exit_event.set()
 
-    def process_message(self, message: Protocol, is_receiving=False):
+    def process_message(self, message: Protocol, is_receiving=False, func = None):
         if not message:
             self.print_caution("GOT EMPTY MESSAGE")
             return False
@@ -71,14 +73,21 @@ class Client:
             else:
                 self.print_ok("INITIALIZATION SUCCESSFUL")
             return False
-
+        
+        # message[Field.]
         if message == Protocols.DISCONNECT:
             self.disconnect()
             return True
+        
 
-        elif not is_receiving:
+
+        if not is_receiving:
             self.send_data(message)
             return False
+        
+        if func is not None:
+            func(message)
+        
 
     def receive(self):
         self.selector_sock.register(self.sock, selectors.EVENT_READ, self.receive_data2)
