@@ -29,7 +29,8 @@ LOG_MESSAGE_SIZE = 75.0
 LOG = True
 
 
-#TODO: Add thread for rely connections to neighbor nodes
+# TODO: Add thread for rely connections to neighbor nodes
+
 
 class Client:
     def __init__(self, client_id: str, host="127.0.0.1", port=5000):
@@ -52,7 +53,9 @@ class Client:
                 self.sock.connect((host, port))
                 connected = True
             except socket.error as err:
-                self.print_caution(f"Unable to resolve IP address, retrying in {wait_time} second(s)...")
+                self.print_caution(
+                    f"Unable to resolve IP address, retrying in {wait_time} second(s)..."
+                )
                 time.sleep(wait_time)
 
     def disconnect(self):
@@ -61,7 +64,7 @@ class Client:
         self.running = False
         self.exit_event.set()
 
-    def process_message(self, message: Protocol, is_receiving=False, func = None):
+    def process_message(self, message: Protocol, is_receiving=False, func=None):
         if not message:
             self.print_caution("GOT EMPTY MESSAGE")
             return False
@@ -73,23 +76,20 @@ class Client:
             else:
                 self.print_ok("INITIALIZATION SUCCESSFUL")
             return False
-        
+
         # message[Field.]
         if message == Protocols.DISCONNECT:
             self.disconnect()
             return True
-        
-
 
         if not is_receiving:
             self.send_data(message)
             return False
-        
+
         if func is not None:
             func(message)
-        
 
-    def receive(self):
+    def _receive(self):
         self.selector_sock.register(self.sock, selectors.EVENT_READ, self.receive_data2)
         while not self.exit_event.is_set():
             events = self.selector_sock.select(timeout=0)
@@ -115,7 +115,7 @@ class Client:
     def command_line(self):
         while not self.exit_event.is_set():
             try:
-                if self.is_active(sys.stdin):
+                if self._is_active(sys.stdin):
                     message = input()
                     if Protocol.has_key(message, ProtocolMethod):
                         message = Protocol(method=message)
@@ -136,7 +136,7 @@ class Client:
                 self.running = False
                 break
 
-    def is_active(self, stream, timeout=1):
+    def _is_active(self, stream, timeout=1):
         ready, _, _ = select.select([stream], [], [], timeout)
         return ready
 
@@ -199,7 +199,7 @@ class Client:
         return CLI.color("aquamarine", f"{str(peer_name[0])} : {str(peer_name[1])}")
 
     def run(self):
-        receive_thread = threading.Thread(target=self.receive)
+        receive_thread = threading.Thread(target=self._receive)
         write_thread = threading.Thread(target=self.command_line)
 
         receive_thread.start()
@@ -223,16 +223,26 @@ class Client:
             print(msg, **kwargs)
 
     def print_error(self, message):
-        self.print_thread(CLI.message(message, "red", verbose=False, width_fraction=LOG_MESSAGE_SIZE))
+        self.print_thread(
+            CLI.message(message, "red", verbose=False, width_fraction=LOG_MESSAGE_SIZE)
+        )
 
     def print_caution(self, message):
-        self.print_thread(CLI.message(message, "yellow", verbose=False, width_fraction=LOG_MESSAGE_SIZE))
-        
+        self.print_thread(
+            CLI.message(
+                message, "yellow", verbose=False, width_fraction=LOG_MESSAGE_SIZE
+            )
+        )
+
     def print_ok(self, message):
-        self.print_thread(CLI.message(message, "lime", verbose=False, width_fraction=LOG_MESSAGE_SIZE))
+        self.print_thread(
+            CLI.message(message, "lime", verbose=False, width_fraction=LOG_MESSAGE_SIZE)
+        )
 
     def print_(self, message):
-        self.print_thread(CLI.message(message, "lime", verbose=False, width_fraction=LOG_MESSAGE_SIZE))
+        self.print_thread(
+            CLI.message(message, "lime", verbose=False, width_fraction=LOG_MESSAGE_SIZE)
+        )
 
 
 def get_args():

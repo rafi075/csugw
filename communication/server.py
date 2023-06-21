@@ -23,6 +23,7 @@ LOG_MESSAGE_SIZE = 75.0
 LOG_PADDING = 0
 LOG = True
 
+
 # TODO: parse config file
 class Server:
     def __init__(self, host="127.0.0.1", port=5000):
@@ -52,7 +53,6 @@ class Server:
                         self._send_data(client, message)
 
     def process_message(self, client, message: Protocol):
-
         if message == Protocols.DISCONNECT:
             self.disconnect_client(client)
             return True
@@ -64,7 +64,7 @@ class Server:
             self.broadcast(f"{message}", exclude=client)
         return False
 
-    def handle_client(self, client: Node):
+    def _handle_client(self, client: Node):
         while not self.exit_event.is_set():
             try:
                 ready_to_read, _, _ = select.select([client.socket], [], [], 1)
@@ -92,7 +92,7 @@ class Server:
                     with self.locks["thread"]:
                         self.threads.append(
                             threading.Thread(
-                                target=self.handle_client, args=(client_node,)
+                                target=self._handle_client, args=(client_node,)
                             )
                         )
                         self.threads[-1].start()
@@ -204,7 +204,7 @@ class Server:
         self._print_("Connected Clients")
         CLI.table(data, showindex=True)
 
-    def show_client(self, client:int or str):
+    def show_client(self, client: int or str):
         if type(client) is str:
             for node in self.clients:
                 if node.ID == client:
@@ -212,7 +212,7 @@ class Server:
 
         if str(client).isdigit():
             client = int(client)
-            if client >=0 and client < len(self.clients):
+            if client >= 0 and client < len(self.clients):
                 self.clients[client].show()
             else:
                 self._print_error("INVALID CLIENT INDEX")
@@ -279,41 +279,51 @@ class Server:
 
                 message = Protocol(content=message, method=message)
 
-
-    def commands(self, user_input:str):
+    def commands(self, user_input: str):
         from cli_commands import CLI_DEFAULT_COMMANDS, CLI_COMMANDS
+
         self.custom_commands = CLI_COMMANDS
         input_segments = user_input.split(" ")
         for command in self.custom_commands + CLI_DEFAULT_COMMANDS:
             if input_segments[0] in command["Commands"]:
-
-
                 if hasattr(command["Function"], "__name__"):
                     need_self = command["Function"].__name__ in dir(Server)
                 else:
                     need_self = False
 
-
                 if command["Parameters"] > 0:
                     # return command["Function"](self, *command["Parameters"]) if need_self else command["Function"](*command["Parameters"])
-                    return command["Function"](self, *input_segments[1:]) if need_self else command["Function"](*input_segments[1:])
+                    return (
+                        command["Function"](self, *input_segments[1:])
+                        if need_self
+                        else command["Function"](*input_segments[1:])
+                    )
                     # return command["Function"](self, *command["Parameters"]) if need_self else command["Function"](*command["Parameters"])
                 elif len(input_segments) > 0:
-                    return command["Function"](self, *input_segments[1:]) if need_self else command["Function"](*input_segments[1:])
+                    return (
+                        command["Function"](self, *input_segments[1:])
+                        if need_self
+                        else command["Function"](*input_segments[1:])
+                    )
                 else:
-                    return command["Function"](self) if need_self else command["Function"]()
+                    return (
+                        command["Function"](self)
+                        if need_self
+                        else command["Function"]()
+                    )
         else:
             print(f"Command '{input_segments}' not found.")
         return 123
 
-
     def show_help_menu(self):
         # print("Available commands:")
         from cli_commands import CLI_DEFAULT_COMMANDS
-        results = CLI.create_help_menu(self.custom_commands, CLI_DEFAULT_COMMANDS, verbose=False)
+
+        results = CLI.create_help_menu(
+            self.custom_commands, CLI_DEFAULT_COMMANDS, verbose=False
+        )
         self._print_thread(results[0])
         self._print_thread(results[1])
-        
 
 
 if __name__ == "__main__":

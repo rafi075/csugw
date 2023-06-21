@@ -23,6 +23,7 @@ class ProtocolMethod(Enum):
     EXIT = "EXIT"
     SHOW = "SHOW"
 
+
 class Field(Enum):
     ID = "ID"
     TYPE = "TYPE"
