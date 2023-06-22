@@ -288,6 +288,7 @@ class Server:
 
     def __command_line(self):
         from cli_commands import CLI_DEFAULT_COMMANDS, CLI_SERVER_COMMANDS
+
         self.custom_commands = self.custom_commands + CLI_SERVER_COMMANDS
 
         while not self.exit_event.is_set():
@@ -319,6 +320,7 @@ class Server:
                 self.exit_event.set()
                 self.running = False
                 break
+
     def __commands(self, user_input: str):
         from cli_commands import CLI_DEFAULT_COMMANDS
 
@@ -341,11 +343,7 @@ class Server:
                         else function(*input_segments[1:])
                     )
                 else:
-                    return (
-                        function(self)
-                        if need_self
-                        else function()
-                    )
+                    return function(self) if need_self else function()
         else:
             # print(f"Command '{input_segments}' not found.")
             return True
@@ -353,6 +351,7 @@ class Server:
 
     def show_help_menu(self):
         from cli_commands import CLI_DEFAULT_COMMANDS
+
         results = CLI.create_help_menu(
             self.custom_commands, CLI_DEFAULT_COMMANDS, verbose=False
         )
