@@ -53,10 +53,10 @@ def get_user_input(
 
 
 def process_input(user_input: str):
-    from cli_commands import CLI_COMMANDS, CLI_DEFAULT_COMMANDS
+    from cli_commands import CLI_SERVER_COMMANDS, CLI_DEFAULT_COMMANDS
 
     user_input = user_input.split(" ")
-    for command in CLI_COMMANDS + CLI_DEFAULT_COMMANDS:
+    for command in CLI_SERVER_COMMANDS + CLI_DEFAULT_COMMANDS:
         if user_input[0] in command["Commands"]:
             if len(command["Parameters"]) > 0:
                 return command["Function"](*command["Parameters"])
@@ -122,13 +122,13 @@ def create_help_menu(
 
 
 def show_help_menu():
-    from cli_commands import CLI_COMMANDS, CLI_DEFAULT_COMMANDS
+    from cli_commands import CLI_SERVER_COMMANDS, CLI_DEFAULT_COMMANDS
 
-    create_help_menu(CLI_COMMANDS, CLI_DEFAULT_COMMANDS, pad=80)
+    create_help_menu(CLI_SERVER_COMMANDS, CLI_DEFAULT_COMMANDS, pad=80)
 
 
 def show_help_menu_brief():
-    from cli_commands import CLI_COMMANDS, CLI_DEFAULT_COMMANDS
+    from cli_commands import CLI_SERVER_COMMANDS, CLI_DEFAULT_COMMANDS
 
     create_menu([CLI_DEFAULT_COMMANDS[0]], use_headers=False, pad=80)
 
@@ -252,6 +252,7 @@ def message(
     verbose: bool = True,
     width_fraction: float = 50.0,
     end="",
+    print_func=print,
     **kwargs,
 ):
     """
@@ -294,8 +295,47 @@ def message(
         **kwargs,
     )
     if verbose:
-        print(msg)
+        print_func(msg)
     return end + msg
+
+
+def message_error(
+    text: str,
+    colr: str = "red",
+    width: int = round(MAX_WIDTH / 2),
+    verbose: bool = True,
+    width_fraction: float = 50.0,
+    end="",
+    print_func=print,
+    **kwargs,
+):
+    return message(text, colr, width, verbose, width_fraction, end, print_func)
+
+
+def message_caution(
+    text: str,
+    colr: str = "yellow",
+    width: int = round(MAX_WIDTH / 2),
+    verbose: bool = True,
+    width_fraction: float = 50.0,
+    end="",
+    print_func=print,
+    **kwargs,
+):
+    return message(text, colr, width, verbose, width_fraction, end, print_func)
+
+
+def message_ok(
+    text: str,
+    colr: str = "lime",
+    width: int = round(MAX_WIDTH / 2),
+    verbose: bool = True,
+    width_fraction: float = 50.0,
+    end="",
+    print_func=print,
+    **kwargs,
+):
+    return message(text, colr, width, verbose, width_fraction, end, print_func)
 
 
 def table(

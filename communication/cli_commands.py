@@ -1,8 +1,8 @@
 from server import Server
 from lib_cli import create_menu, clear_terminal, show_help_menu
-
+# display_network
 # CLI_ARGS = {}
-CLI_COMMANDS = [
+CLI_SERVER_COMMANDS = [
     {
         "Commands": ["clients", "show_clients"],
         "Description": "Displays an overview of all clients connected to the server.",
@@ -15,10 +15,14 @@ CLI_COMMANDS = [
         "Function": Server.show_client,
         "Parameters": 1,
     },
+]
+
+
+CLI_CLIENT_COMMANDS = [
     {
-        "Commands": ["exit", "kill"],
-        "Description": "Terminates all clients and the server",
-        "Function": Server.shutdown,
+        "Commands": ["show", "sh"],
+        "Description": "Shows connection",
+        "Function": "display_network",
         "Parameters": 0,
     },
 ]
@@ -28,7 +32,7 @@ CLI_DEFAULT_COMMANDS = [
     {
         "Commands": ["help", "h", "?", "--help", "-h"],
         "Description": "Displays help menu",
-        "Function": Server.show_help_menu,
+        "Function": "show_help_menu",
         "Parameters": 0,
     },
     {
@@ -46,7 +50,7 @@ CLI_DEFAULT_COMMANDS = [
     {
         "Commands": ["exit", "quit", "kill", "q"],
         "Description": "Exits the program",
-        "Function": Server.shutdown,
+        "Function": "shutdown",
         "Parameters": 1,
     },
 ]

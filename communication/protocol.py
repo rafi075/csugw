@@ -22,6 +22,7 @@ class ProtocolMethod(Enum):
     INIT = "INIT"
     EXIT = "EXIT"
     SHOW = "SHOW"
+    TEST = "TEST"
 
 
 class Field(Enum):
@@ -144,6 +145,8 @@ class Protocol:
             return self[Field.METHOD] == __value[Field.METHOD]
         if type(__value) is str:
             return self[Field.METHOD] == __value
+        if type(__value) is ProtocolMethod:
+            return self[Field.METHOD] == __value.value
         return False
 
     def __getitem__(self, key: Field or str):

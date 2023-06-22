@@ -1,7 +1,7 @@
 
-from server import Server
-from client import Client
-import protocol
+# from server import Server
+# from client import Client
+# import protocol
 
 #TODO:
 # generalize process_message function to allow OSU
@@ -19,16 +19,18 @@ import protocol
 #
 #
 
+
+
 def taglogic():
     print("TAG Logic")
 
 
-def logic(message:protocol.Protocol):
-    if message.TAG == protocol.TAG_SEND:
-        taglogic()
+# def logic(message:protocol.Protocol):
+#     if message.TAG == protocol.TAG_SEND:
+#         taglogic()
 
-s = Server()
-c = Client(s)
+# s = Server()
+# c = Client(s)
 
-
-c.process_message("", "", logic)
+# c.
+# c.__process_message("", "", logic)
