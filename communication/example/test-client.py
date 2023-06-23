@@ -26,6 +26,7 @@ def custom_logic(obj: Client, client: Node, message: Protocol or str):
     if message == ProtocolMethod.TEST:
         CLI.message_ok("CUSTOM LOGIC - CLIENT TEST")
         obj.send(Protocol(content="Client Confirmed"))
+        # obj.
         return False
     else:
         print("Custom Logic")

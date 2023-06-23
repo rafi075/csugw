@@ -43,16 +43,16 @@ class Client:
     ):
         self.id = client_id
         self.running = True
-        self.print_lock = threading.Lock()
-        self.exit_event = threading.Event()
+        self.__print_lock = threading.Lock()
+        self.__exit_event = threading.Event()
         self.initialized = False
         self.sock = None
 
         self.custom_logic = custom_logic
         self.custom_commands = [] if custom_commands is None else custom_commands
 
-        self.selector_sock = selectors.DefaultSelector()
-        self.selector_input = selectors.DefaultSelector()
+        self.__selector_sock = selectors.DefaultSelector()
+        self.__selector_input = selectors.DefaultSelector()
 
         connected = False
         wait_time = 5
@@ -98,12 +98,12 @@ class Client:
         return False
 
     def __receive(self):
-        self.selector_sock.register(
+        self.__selector_sock.register(
             self.sock, selectors.EVENT_READ, self.__receive_data
         )
 
-        while not self.exit_event.is_set():
-            events = self.selector_sock.select(timeout=0)
+        while not self.__exit_event.is_set():
+            events = self.__selector_sock.select(timeout=0)
             try:
                 for key, mask in events:
                     callback = key.data
@@ -119,14 +119,14 @@ class Client:
                 self.__print_thread(err)
                 self.__print_thread(traceback.format_exc())
                 self.sock.close()
-                self.exit_event.set()
+                self.__exit_event.set()
                 self.running = False
                 break
 
     def __command_line(self):
         from cli_commands import CLI_DEFAULT_COMMANDS, CLI_CLIENT_COMMANDS
         self.custom_commands = self.custom_commands + CLI_CLIENT_COMMANDS
-        while not self.exit_event.is_set():
+        while not self.__exit_event.is_set():
             try:
                 if self.__is_active(sys.stdin):
                     message = input()
@@ -150,7 +150,7 @@ class Client:
                 self.__print_thread(err)
                 self.__print_thread(traceback.format_exc())
                 self.sock.close()
-                self.exit_event.set()
+                self.__exit_event.set()
                 self.running = False
                 break
 
@@ -186,6 +186,7 @@ class Client:
         return "VOID"
 
     def run(self):
+        CLI.clear_terminal()
         receive_thread = threading.Thread(target=self.__receive)
         write_thread = threading.Thread(target=self.__command_line)
 
@@ -196,10 +197,10 @@ class Client:
             try:
                 thread.join()
             except KeyboardInterrupt:
-                self.exit_event.set()
+                self.__exit_event.set()
             except Exception as err:
                 print(err.with_traceback())
-                self.exit_event.set()
+                self.__exit_event.set()
 
     def send(self, message: Protocol, sign: bool = True, encoding: str = "ascii"):
         self.__send_data(message, sign=sign)
@@ -249,7 +250,7 @@ class Client:
         self.__send_data(Protocols.DISCONNECT)
         CLI.message_error("TERMINATED BY SERVER", print_func=self.__print_thread)
         self.running = False
-        self.exit_event.set()
+        self.__exit_event.set()
         
 
     def __print_thread(self, *args, **kwargs):
@@ -257,7 +258,7 @@ class Client:
         msg = "".join(str(arg) + kwargs["sep"] for arg in args)
         msg = CLI.color(kwargs["clr"], msg) if "clr" in kwargs else msg
         kwargs.pop("clr", "")
-        with self.print_lock:
+        with self.__print_lock:
             print(msg, **kwargs)
 
     def show_help_menu(self):

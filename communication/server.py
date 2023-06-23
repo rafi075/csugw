@@ -6,7 +6,6 @@ import argparse
 import socket
 import time
 import traceback
-from inputimeout import inputimeout
 import jsonschema
 from protocol import (
     Protocols,
@@ -33,18 +32,18 @@ class Server:
     ):
         self.host = host
         self.port = port
-        self.clients = []
-        self.threads = []
-        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server.bind((self.host, self.port))
-        self.server.listen()
+        self.__clients = []
+        self.__threads = []
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.bind((self.host, self.port))
+        self.sock.listen()
         self.running = True
 
         self.custom_commands = [] if custom_commands is None else custom_commands
         self.custom_logic = custom_logic
 
-        self.exit_event = threading.Event()
-        self.locks = {
+        self.__exit_event = threading.Event()
+        self.__locks = {
             "clients": threading.Lock(),
             "print": threading.Lock(),
             "thread": threading.Lock(),
@@ -79,7 +78,7 @@ class Server:
 
         self.custom_commands = self.custom_commands + CLI_SERVER_COMMANDS
 
-        while not self.exit_event.is_set():
+        while not self.__exit_event.is_set():
             try:
                 if self.__is_active(sys.stdin):
                     message = input()
@@ -92,7 +91,7 @@ class Server:
                     if Protocol.has_key(message, ProtocolMethod):
                         message = Protocol(method=message)
                         # self.broadcast(message)
-                        for client in self.clients:
+                        for client in self.__clients:
                             self.__process_message(client, message, is_receiving=False)
                         # if self.__process_message(message, is_receiving=False):
                         # break
@@ -105,7 +104,7 @@ class Server:
                 self.__print_thread(err)
                 self.__print_thread(traceback.format_exc())
                 self.sock.close()
-                self.exit_event.set()
+                self.__exit_event.set()
                 self.running = False
                 break
 
@@ -138,7 +137,7 @@ class Server:
         return "VOID"
 
     def __handle_client(self, client: Node):
-        while not self.exit_event.is_set():
+        while not self.__exit_event.is_set():
             try:
                 ready_to_read, _, _ = select.select([client.socket], [], [], 1)
                 if ready_to_read:
@@ -153,22 +152,22 @@ class Server:
                 break
 
     def __receive(self):
-        self.server.setblocking(False)
-        while not self.exit_event.is_set():
-            ready_to_read, _, _ = select.select([self.server], [], [], 1)
+        self.sock.setblocking(False)
+        while not self.__exit_event.is_set():
+            ready_to_read, _, _ = select.select([self.sock], [], [], 1)
             if ready_to_read:
-                client, address = self.server.accept()
-                with self.locks["clients"]:
-                    if address not in self.clients:
+                client, address = self.sock.accept()
+                with self.__locks["clients"]:
+                    if address not in self.__clients:
                         client_node = self.__initialize_client(client)
                 if client_node:
-                    with self.locks["thread"]:
-                        self.threads.append(
+                    with self.__locks["thread"]:
+                        self.__threads.append(
                             threading.Thread(
                                 target=self.__handle_client, args=(client_node,)
                             )
                         )
-                        self.threads[-1].start()
+                        self.__threads[-1].start()
 
     def __initialize_client(self, client):
         self.__send_data(client, Protocols.INITIALIZE)
@@ -181,7 +180,7 @@ class Server:
         # TODO: Implement AWK
         self.__send_data(client, Protocols.INITIALIZE)
         client_node = Node(client, response["ID"])
-        self.clients.append(client_node)
+        self.__clients.append(client_node)
         CLI.line()
         CLI.message_ok(
             f"CLIENT CONNECTED: {str(client_node._strIPPORT)}",
@@ -227,8 +226,8 @@ class Server:
         except:
             pass
 
-        with self.locks["clients"]:
-            self.clients.remove(client)
+        with self.__locks["clients"]:
+            self.__clients.remove(client)
 
         CLI.message_caution(
             f"CLIENT DISCONNECTED: {str(client._strIPPORT)}",
@@ -236,11 +235,11 @@ class Server:
         )
 
     def broadcast(self, message, exclude=None):
-        if exclude and exclude in self.clients and len(self.clients) == 1:
+        if exclude and exclude in self.__clients and len(self.__clients) == 1:
             return
         if message != Protocols.INITIALIZE:
-            with self.locks["clients"]:
-                for client in self.clients:
+            with self.__locks["clients"]:
+                for client in self.__clients:
                     if exclude != client:
                         self.__send_data(client, message)
 
@@ -252,27 +251,27 @@ class Server:
         CLI.message_caution("STOPPING SERVER...", print_func=self.__print_thread)
         self.broadcast(message)
         self.running = False
-        self.exit_event.set()
+        self.__exit_event.set()
         time.sleep(1)
-        with self.locks["clients"]:
-            for client in self.clients:
+        with self.__locks["clients"]:
+            for client in self.__clients:
                 client.close()
 
-        with self.locks["thread"]:
-            for thread in self.threads:
+        with self.__locks["thread"]:
+            for thread in self.__threads:
                 if thread.is_alive() and thread != threading.current_thread():
                     thread.join()
 
-        self.server.close()
+        self.sock.close()
         CLI.message_error("SERVER SHUTDOWN", print_func=self.__print_thread)
 
     def show_clients(self):
-        if len(self.clients) == 0:
+        if len(self.__clients) == 0:
             CLI.message_error("NO CLIENTS CONNECTED", print_func=self.__print_thread)
             return
 
         client_info = []
-        for node in self.clients:
+        for node in self.__clients:
             client_info.append(node.get_data())
         data = [list(client_info[0].keys())] + [
             list(entry.values()) for entry in client_info
@@ -282,14 +281,14 @@ class Server:
 
     def show_client(self, client: int or str):
         if type(client) is str:
-            for node in self.clients:
+            for node in self.__clients:
                 if node.ID == client:
                     node.show()
 
         if str(client).isdigit():
             client = int(client)
-            if client >= 0 and client < len(self.clients):
-                self.clients[client].show()
+            if client >= 0 and client < len(self.__clients):
+                self.__clients[client].show()
             else:
                 CLI.message_error(
                     "INVALID CLIENT INDEX", print_func=self.__print_thread
@@ -300,16 +299,16 @@ class Server:
         CLI.message_ok(
             f"SERVER STARTED {self.host}:{self.port}", print_func=self.__print_thread
         )
-        self.server.listen()
-        self.threads.extend(
+        self.sock.listen()
+        self.__threads.extend(
             [
                 threading.Thread(target=self.__receive),
                 threading.Thread(target=self.__command_line),
             ]
         )
-        [thread.start() for thread in self.threads]
-
-        for thread in self.threads:
+        
+        [thread.start() for thread in self.__threads]
+        for thread in self.__threads:
             try:
                 thread.join()
             except KeyboardInterrupt:
@@ -348,7 +347,7 @@ class Server:
         msg = "".join(str(arg) + kwargs["sep"] for arg in args)
         msg = CLI.color(kwargs["clr"], msg) if "clr" in kwargs else msg
         kwargs.pop("clr", "")
-        with self.locks["print"]:
+        with self.__locks["print"]:
             print(msg, **kwargs)
 
     def __print_(self, message):
