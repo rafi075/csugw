@@ -41,6 +41,7 @@ class Server:
         self.__threads = []
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.bind((self.host, self.port))
+        self.sock.settimeout(1)
         self.sock.listen()
         self.running = True
 
