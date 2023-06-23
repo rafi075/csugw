@@ -9,7 +9,7 @@ import threading
 from random import randrange
 import time
 import traceback
-
+import api as API
 import jsonschema
 
 import lib_cli as CLI
@@ -69,14 +69,6 @@ class Client:
                 )
                 time.sleep(wait_time)
 
-    def shutdown(self):
-        self.disconnect()
-
-    def disconnect(self):
-        self.__send_data(Protocols.DISCONNECT)
-        CLI.message_error("TERMINATED BY SERVER", print_func=self.__print_thread)
-        self.running = False
-        self.exit_event.set()
 
     def __process_message(self, message: Protocol, is_receiving=False):
         if not message:
@@ -193,8 +185,24 @@ class Client:
             print(f"Command '{input_segments}' not found.")
         return "VOID"
 
+    def run(self):
+        receive_thread = threading.Thread(target=self.__receive)
+        write_thread = threading.Thread(target=self.__command_line)
+
+        receive_thread.start()
+        write_thread.start()
+
+        for thread in [receive_thread, write_thread]:
+            try:
+                thread.join()
+            except KeyboardInterrupt:
+                self.exit_event.set()
+            except Exception as err:
+                print(err.with_traceback())
+                self.exit_event.set()
+
     def send(self, message: Protocol, sign: bool = True, encoding: str = "ascii"):
-        self.__send_data(message.to_network(encoding=encoding), sign=sign)
+        self.__send_data(message, sign=sign)
 
     def __is_active(self, stream, timeout=1):
         ready, _, _ = select.select([stream], [], [], timeout)
@@ -234,21 +242,15 @@ class Client:
         peer_name = socket_obj.getpeername()
         return CLI.color("aquamarine", f"{str(peer_name[0])} : {str(peer_name[1])}")
 
-    def run(self):
-        receive_thread = threading.Thread(target=self.__receive)
-        write_thread = threading.Thread(target=self.__command_line)
+    def shutdown(self):
+        self.disconnect()
 
-        receive_thread.start()
-        write_thread.start()
-
-        for thread in [receive_thread, write_thread]:
-            try:
-                thread.join()
-            except KeyboardInterrupt:
-                self.exit_event.set()
-            except Exception as err:
-                print(err.with_traceback())
-                self.exit_event.set()
+    def disconnect(self):
+        self.__send_data(Protocols.DISCONNECT)
+        CLI.message_error("TERMINATED BY SERVER", print_func=self.__print_thread)
+        self.running = False
+        self.exit_event.set()
+        
 
     def __print_thread(self, *args, **kwargs):
         kwargs = {**{"sep": " ", "end": "\n"}, **kwargs}

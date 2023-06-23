@@ -50,15 +50,6 @@ class Server:
             "thread": threading.Lock(),
         }
 
-    def broadcast(self, message, exclude=None):
-        if exclude and exclude in self.clients and len(self.clients) == 1:
-            return
-        if message != Protocols.INITIALIZE:
-            with self.locks["clients"]:
-                for client in self.clients:
-                    if exclude != client:
-                        self.__send_data(client, message)
-
     def __process_message(self, client, message: Protocol, is_receiving=False):
         if not message:
             CLI.message_caution("GOT EMPTY MESSAGE", print_func=self.__print_thread)
@@ -82,6 +73,69 @@ class Server:
                 self.__send_data(message)
 
         return False
+
+    def __command_line(self):
+        from cli_commands import CLI_DEFAULT_COMMANDS, CLI_SERVER_COMMANDS
+
+        self.custom_commands = self.custom_commands + CLI_SERVER_COMMANDS
+
+        while not self.exit_event.is_set():
+            try:
+                if self.__is_active(sys.stdin):
+                    message = input()
+                    result = self.__commands(message)
+                    if result is False:
+                        continue
+                    if result == "VOID":
+                        print("Invalid METHOD:\t", f'"{message}"\n')
+                        continue
+                    if Protocol.has_key(message, ProtocolMethod):
+                        message = Protocol(method=message)
+                        # self.broadcast(message)
+                        for client in self.clients:
+                            self.__process_message(client, message, is_receiving=False)
+                        # if self.__process_message(message, is_receiving=False):
+                        # break
+            except KeyboardInterrupt:
+                break
+            except ValueError:
+                break
+            except Exception as err:
+                CLI.message_error("COMMAND LINE ERROR", print_func=self.__print_thread)
+                self.__print_thread(err)
+                self.__print_thread(traceback.format_exc())
+                self.sock.close()
+                self.exit_event.set()
+                self.running = False
+                break
+
+    def __commands(self, user_input: str):
+        from cli_commands import CLI_DEFAULT_COMMANDS
+
+        input_segments = user_input.split(" ")
+        for command in self.custom_commands + CLI_DEFAULT_COMMANDS:
+            if input_segments[0] in command["Commands"]:
+                function = command["Function"]
+                if hasattr(function, "__name__"):
+                    need_self = function.__name__ in dir(self.__class__)
+                else:
+                    if function in dir(self.__class__):
+                        need_self = True
+                        function = getattr(self.__class__, function)
+                    else:
+                        need_self = False
+                if command["Parameters"] > 0:
+                    return (
+                        function(self, *input_segments[1:])
+                        if need_self
+                        else function(*input_segments[1:])
+                    )
+                else:
+                    return function(self) if need_self else function()
+        else:
+            # print(f"Command '{input_segments}' not found.")
+            return True
+        return "VOID"
 
     def __handle_client(self, client: Node):
         while not self.exit_event.is_set():
@@ -166,22 +220,6 @@ class Server:
         self.__log_receive(message, addr)
         return message
 
-    def __log_send(self, message, addr):
-        if LOG:
-            output = f"[LOG] {CLI.color('steelblue', 'SENDING:')}\n"
-            output += f'{str(message):<{LOG_PADDING}} {"-->":<{LOG_PADDING}} {addr}\n'
-            self.__print_thread(output, clr="gray")
-
-    def __log_receive(self, message, addr):
-        if LOG:
-            output = f"[LOG] {CLI.color('tomato', 'RECEIVED:')}\n"
-            output += f'{str(message):<{LOG_PADDING}} {"<--":<{LOG_PADDING}} {addr}\n'
-            self.__print_thread(output, clr="gray")
-
-    def __get_socket_address(self, socket_obj: socket.socket) -> str:
-        peer_name = socket_obj.getpeername()
-        return CLI.color("aquamarine", f"{str(peer_name[0])} : {str(peer_name[1])}")
-
     def disconnect_client(self, client: Node):
         try:
             self.__send_data(client.socket, Protocols.DISCONNECT)
@@ -196,6 +234,15 @@ class Server:
             f"CLIENT DISCONNECTED: {str(client._strIPPORT)}",
             print_func=self.__print_thread,
         )
+
+    def broadcast(self, message, exclude=None):
+        if exclude and exclude in self.clients and len(self.clients) == 1:
+            return
+        if message != Protocols.INITIALIZE:
+            with self.locks["clients"]:
+                for client in self.clients:
+                    if exclude != client:
+                        self.__send_data(client, message)
 
     def shutdown(self):
         message = Protocols.DISCONNECT
@@ -271,6 +318,31 @@ class Server:
                 CLI.message_error("SERVER ERROR", print_func=self.__print_thread)
                 print(e)
 
+    def show_help_menu(self):
+        from cli_commands import CLI_DEFAULT_COMMANDS
+
+        results = CLI.create_help_menu(
+            self.custom_commands, CLI_DEFAULT_COMMANDS, verbose=False
+        )
+        self.__print_thread(results[0])
+        self.__print_thread(results[1])
+
+    def __log_send(self, message, addr):
+        if LOG:
+            output = f"[LOG] {CLI.color('steelblue', 'SENDING:')}\n"
+            output += f'{str(message):<{LOG_PADDING}} {"-->":<{LOG_PADDING}} {addr}\n'
+            self.__print_thread(output, clr="gray")
+
+    def __log_receive(self, message, addr):
+        if LOG:
+            output = f"[LOG] {CLI.color('tomato', 'RECEIVED:')}\n"
+            output += f'{str(message):<{LOG_PADDING}} {"<--":<{LOG_PADDING}} {addr}\n'
+            self.__print_thread(output, clr="gray")
+
+    def __get_socket_address(self, socket_obj: socket.socket) -> str:
+        peer_name = socket_obj.getpeername()
+        return CLI.color("aquamarine", f"{str(peer_name[0])} : {str(peer_name[1])}")
+
     def __print_thread(self, *args, **kwargs):
         kwargs = {**{"sep": " ", "end": "\n"}, **kwargs}
         msg = "".join(str(arg) + kwargs["sep"] for arg in args)
@@ -287,78 +359,6 @@ class Server:
     def __is_active(self, stream, timeout=1):
         ready, _, _ = select.select([stream], [], [], timeout)
         return ready
-
-    def __command_line(self):
-        from cli_commands import CLI_DEFAULT_COMMANDS, CLI_SERVER_COMMANDS
-
-        self.custom_commands = self.custom_commands + CLI_SERVER_COMMANDS
-
-        while not self.exit_event.is_set():
-            try:
-                if self.__is_active(sys.stdin):
-                    message = input()
-                    result = self.__commands(message)
-                    if result is False:
-                        continue
-                    if result == "VOID":
-                        print("Invalid METHOD:\t", f'"{message}"\n')
-                        continue
-                    if Protocol.has_key(message, ProtocolMethod):
-                        message = Protocol(method=message)
-                        # self.broadcast(message)
-                        for client in self.clients:
-                            self.__process_message(client, message, is_receiving=False)
-                        # if self.__process_message(message, is_receiving=False):
-                        # break
-            except KeyboardInterrupt:
-                break
-            except ValueError:
-                break
-            except Exception as err:
-                CLI.message_error("COMMAND LINE ERROR", print_func=self.__print_thread)
-                self.__print_thread(err)
-                self.__print_thread(traceback.format_exc())
-                self.sock.close()
-                self.exit_event.set()
-                self.running = False
-                break
-
-    def __commands(self, user_input: str):
-        from cli_commands import CLI_DEFAULT_COMMANDS
-
-        input_segments = user_input.split(" ")
-        for command in self.custom_commands + CLI_DEFAULT_COMMANDS:
-            if input_segments[0] in command["Commands"]:
-                function = command["Function"]
-                if hasattr(function, "__name__"):
-                    need_self = function.__name__ in dir(self.__class__)
-                else:
-                    if function in dir(self.__class__):
-                        need_self = True
-                        function = getattr(self.__class__, function)
-                    else:
-                        need_self = False
-                if command["Parameters"] > 0:
-                    return (
-                        function(self, *input_segments[1:])
-                        if need_self
-                        else function(*input_segments[1:])
-                    )
-                else:
-                    return function(self) if need_self else function()
-        else:
-            # print(f"Command '{input_segments}' not found.")
-            return True
-        return "VOID"
-
-    def show_help_menu(self):
-        from cli_commands import CLI_DEFAULT_COMMANDS
-
-        results = CLI.create_help_menu(
-            self.custom_commands, CLI_DEFAULT_COMMANDS, verbose=False
-        )
-        self.__print_thread(results[0])
-        self.__print_thread(results[1])
 
 
 if __name__ == "__main__":
