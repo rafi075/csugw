@@ -4,6 +4,7 @@ import json
 import threading
 import argparse
 import socket
+import time
 import traceback
 from inputimeout import inputimeout
 import jsonschema
@@ -205,6 +206,7 @@ class Server:
         self.broadcast(message)
         self.running = False
         self.exit_event.set()
+        time.sleep(1)
         with self.locks["clients"]:
             for client in self.clients:
                 client.close()

@@ -22,11 +22,11 @@ def program_arguments():
 
 def custom_logic(obj: Server, client:Node, message: Protocol or str):
     if message == ProtocolMethod.TEST:
-        print("\n\nSending Test message\n")
+        CLI.message_ok("CUSTOM LOGIC - TEST")
         obj.send(client, message)
         return False
     else:
-        print("Custom Logic")
+        CLI.message_ok("CUSTOM LOGIC - BASE CASE")
         return False
 
 if __name__ == "__main__":
