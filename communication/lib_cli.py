@@ -77,7 +77,7 @@ def input_loop():
 
 
 def create_menu(
-    commands,
+    commands: list[dict],
     headers=["Commands", "Description"],
     use_headers=False,
     verbose=True,
@@ -105,9 +105,9 @@ def create_menu(
 
 
 def create_help_menu(
-    main_menu,
-    help_menu,
-    headers = ["Commands", "Description"],
+    main_menu: list[dict],
+    help_menu: list[dict],
+    headers: list[str] = ["Commands", "Description"],
     verbose=True,
     pad=70,
 ):
