@@ -1,6 +1,7 @@
 #!/bin/python3
 
 import json
+import os
 import threading
 import argparse
 import socket
@@ -15,10 +16,13 @@ from protocol import (
     ProtocolType,
     Field,
 )
+
 from node import Node, HelpMenu
 import lib_cli as CLI
 import select
 import sys
+import msvcrt
+import time
 
 LOG_MESSAGE_SIZE = 75.0
 LOG_PADDING = 0
@@ -26,6 +30,8 @@ LOG = True
 
 
 # TODO: parse config file
+# TODO: get_client_by_id, get_clients_by_tag
+
 class Server:
     def __init__(
         self, host="127.0.0.1", port=5000, custom_logic=None, custom_commands=None
@@ -146,8 +152,6 @@ class Server:
                         break
             except Exception as e:
                 # TODO: Exception thrown on DC
-                # self.print_caution("Exception in handle_client")
-                # self.print_thread(e)
                 self.disconnect_client(client)
                 break
 
@@ -356,8 +360,26 @@ class Server:
         )
 
     def __is_active(self, stream, timeout=1):
-        ready, _, _ = select.select([stream], [], [], timeout)
-        return ready
+        if type(stream) is socket.socket:
+            ready, _, _ = select.select([stream], [], [], timeout)
+            return ready
+        
+        elif os.name == 'nt': 
+            start_time = time.time()
+            while True:
+                if msvcrt.kbhit():  # keypress is waiting, return True
+                    return True
+                if time.time() - start_time > timeout:  # timeout
+                    return False
+        else:  # for Unix/Linux/MacOS/BSD/etc
+            ready, _, _ = select.select([sys.stdin], [], [], timeout)
+            return bool(ready)        
+
+
+
+
+        # ready, _, _ = select.select([stream], [], [], timeout)
+        # return ready
 
 
 if __name__ == "__main__":
