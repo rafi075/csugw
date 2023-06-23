@@ -1,4 +1,5 @@
 import argparse
+from random import randint
 import sys
 import time
 
@@ -23,14 +24,33 @@ def program_arguments():
     return parser.parse_args()
 
 
+def drop_packet(chance):
+    rand = randint(0, 100)
+    if rand <= chance:
+        CLI.message_error(f"PACKET DROPPED")
+        return False
+    
+def ddos(length_of_attack:int):
+    CLI.message_error(f"DDOS: {length_of_attack}")
+    time.sleep(length_of_attack)
+
+def attack_lib():
+    rand = randint(0, 100)
+    if rand <= 50:
+        drop_packet(10)
+    rand = randint(0, 100)
+    if rand <= 50:
+        ddos(10)
 
 def custom_logic(obj: Client, client: Node, message: Protocol or str):
+
+    attack_lib()
+
     if message == ProtocolMethod.TEST:
         CLI.message_ok("CUSTOM LOGIC - CLIENT TEST")
-        obj.send(Protocol(content="Client Confirmed"))
+        obj.send(Protocol(content=f"TEST"))
         return False
     else:
-        print("Custom Logic")
         CLI.message_ok("CUSTOM LOGIC - CLIENT BASE CASE")
         return False
 

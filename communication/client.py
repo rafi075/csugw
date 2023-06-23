@@ -1,6 +1,7 @@
 #!/bin/python3
 import argparse
 import json
+import os
 import select
 import selectors
 import socket
@@ -206,8 +207,22 @@ class Client:
         self.__send_data(message, sign=sign)
 
     def __is_active(self, stream, timeout=1):
-        ready, _, _ = select.select([stream], [], [], timeout)
-        return ready
+        if os.name == 'nt':  # for Windows
+            if type(stream) is socket.socket:
+                ready, _, _ = select.select([stream], [], [], timeout)
+                return ready
+            
+            import msvcrt
+            import time
+            start_time = time.time()
+            while True:
+                if msvcrt.kbhit():  # keypress is waiting, return True
+                    return True
+                if time.time() - start_time > timeout:  # timeout
+                    return False
+        else:  # for Unix/Linux/MacOS/BSD/etc
+            ready, _, _ = select.select([sys.stdin], [], [], timeout)
+            return bool(ready)
 
     def __send_data(self, message, sign: bool = True, encoding: str = "ascii"):
         if type(message) is Protocol:

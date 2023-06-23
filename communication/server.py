@@ -21,7 +21,6 @@ from node import Node, HelpMenu
 import lib_cli as CLI
 import select
 import sys
-import msvcrt
 import time
 
 LOG_MESSAGE_SIZE = 75.0
@@ -360,11 +359,14 @@ class Server:
         )
 
     def __is_active(self, stream, timeout=1):
-        if type(stream) is socket.socket:
-            ready, _, _ = select.select([stream], [], [], timeout)
-            return ready
-        
-        elif os.name == 'nt': 
+
+        if os.name == 'nt':  # for Windows
+            if type(stream) is socket.socket:
+                ready, _, _ = select.select([stream], [], [], timeout)
+                return ready
+            
+            import msvcrt
+            import time
             start_time = time.time()
             while True:
                 if msvcrt.kbhit():  # keypress is waiting, return True
@@ -373,7 +375,25 @@ class Server:
                     return False
         else:  # for Unix/Linux/MacOS/BSD/etc
             ready, _, _ = select.select([sys.stdin], [], [], timeout)
-            return bool(ready)        
+            return bool(ready)
+
+
+        # if type(stream) is socket.socket:
+        #     ready, _, _ = select.select([stream], [], [], timeout)
+        #     return ready
+        
+        # elif os.name == 'nt': # Windows
+        #     start_time = time.time()
+        #     while True:
+        #         if msvcrt.kbhit():  # keypress is waiting, return True
+        #             return True
+        #         if time.time() - start_time > timeout:  # timeout
+        #             return False
+        # else:  # for Unix/Linux/MacOS/BSD/etc
+
+
+        # ready, _, _ = select.select([sys.stdin], [], [], timeout)
+        # return bool(ready)        
 
 
 
