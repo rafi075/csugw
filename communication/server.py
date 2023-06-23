@@ -175,6 +175,10 @@ class Server:
 
     def __initialize_client(self, client):
         self.__send_data(client, Protocols.INITIALIZE)
+
+        while not self.__is_active(client):
+            pass
+
         response = self.__receive_data(client)
         if response == Protocols.DISCONNECT:
             client.shutdown(0)
@@ -361,22 +365,22 @@ class Server:
 
     def __is_active(self, stream, timeout=1):
 
-        if os.name == 'nt':  # for Windows
-            if type(stream) is socket.socket:
+        if type(stream) is socket.socket:
+            ready, _, _ = select.select([stream], [], [], timeout)
+            return ready
+        else:
+            if os.name == 'nt':  # for Windows
+                import msvcrt
+                import time
+                start_time = time.time()
+                while True:
+                    if msvcrt.kbhit():  # keypress is waiting, return True
+                        return True
+                    if time.time() - start_time > timeout:  # timeout
+                        return False
+            else:  # for Unix/Linux/MacOS/BSD/etc
                 ready, _, _ = select.select([stream], [], [], timeout)
-                return ready
-            
-            import msvcrt
-            import time
-            start_time = time.time()
-            while True:
-                if msvcrt.kbhit():  # keypress is waiting, return True
-                    return True
-                if time.time() - start_time > timeout:  # timeout
-                    return False
-        else:  # for Unix/Linux/MacOS/BSD/etc
-            ready, _, _ = select.select([sys.stdin], [], [], timeout)
-            return bool(ready)
+                return bool(ready)
 
 
         # if type(stream) is socket.socket:
