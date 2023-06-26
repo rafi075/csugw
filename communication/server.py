@@ -80,7 +80,7 @@ class Server:
             if message[ProtocolType] == ProtocolType.BROADCAST:
                 self.broadcast(f"{message}", exclude=client)
             else:
-                self.__send_data(message)
+                self.__send_data(client, message)
 
         return False
 

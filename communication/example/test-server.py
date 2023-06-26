@@ -1,6 +1,5 @@
 import argparse
 import sys
-
 sys.path.append("..")
 from server import Server
 import lib_cli as CLI
@@ -23,23 +22,23 @@ def program_arguments():
 
 
 def custom_logic(obj: Server, client: Node, message: Protocol or str):
+    CLI.message_ok("CUSTOM LOGIC", colr="BlueViolet")
+
     if message == ProtocolMethod.TEST:
-        CLI.message_ok("CUSTOM LOGIC - SERVER TEST")
+        CLI.message_ok("TEST", colr="BlueViolet")
         obj.send(client, message)
         return False
     elif message[Field.BODY] == "Client Confirmed":
-        CLI.message_ok("CUSTOM LOGIC - CLIENT CONFIRMED")
+        CLI.message_ok("CLIENT CONFIRMED", colr="BlueViolet")
         return False
     else:
-        CLI.message_ok("CUSTOM LOGIC - SERVER BASE CASE")
         return False
 
 
-if __name__ == "__main__":
-    args = program_arguments()
-    server = Server(
-        host=args.IPv4Address, 
-        port=args.Port, 
-        custom_logic=custom_logic
-    )
-    server.run()
+
+args = program_arguments()
+server = Server(host=args.IPv4Address, 
+                port=args.Port, 
+                custom_logic=custom_logic)
+
+server.run()

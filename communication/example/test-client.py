@@ -1,12 +1,10 @@
 import argparse
-from random import randint
 import sys
-import time
-
 sys.path.append("..")
 from client import Client
 import lib_cli as CLI
 from protocol import *
+from attack import attack_lib
 
 
 def program_arguments():
@@ -24,43 +22,25 @@ def program_arguments():
     return parser.parse_args()
 
 
-def drop_packet(chance):
-    rand = randint(0, 100)
-    if rand <= chance:
-        CLI.message_error(f"PACKET DROPPED")
-        return False
-    
-def ddos(length_of_attack:int):
-    CLI.message_error(f"DDOS: {length_of_attack}")
-    time.sleep(length_of_attack)
-
-def attack_lib():
-    rand = randint(0, 100)
-    if rand <= 50:
-        drop_packet(10)
-    rand = randint(0, 100)
-    if rand <= 50:
-        ddos(10)
-
 def custom_logic(obj: Client, client: Node, message: Protocol or str):
+    CLI.message_ok("CUSTOM LOGIC", colr="BlueViolet")
 
-    attack_lib()
+    if attack_lib():
+        return False
 
     if message == ProtocolMethod.TEST:
-        CLI.message_ok("CUSTOM LOGIC - CLIENT TEST")
+        CLI.message_ok("TEST", colr="BlueViolet")
         obj.send(Protocol(content=f"TEST"))
         return False
     else:
-        CLI.message_ok("CUSTOM LOGIC - CLIENT BASE CASE")
+        CLI.message_ok("BASE CASE", colr="BlueViolet")
         return False
 
 
-if __name__ == "__main__":
-    args = program_arguments()
-    client = Client(
-        "Client1", 
-        host=args.IPv4Address, 
-        port=args.Port, 
-        custom_logic=custom_logic
-    )
-    client.run()
+
+args = program_arguments()
+client = Client("Client1", 
+                host=args.IPv4Address, 
+                port=args.Port, 
+                custom_logic=custom_logic)
+client.run()

@@ -111,7 +111,7 @@ def create_help_menu(
     verbose=True,
     pad=70,
 ):
-    message("Help Menu", width=(pad * (4 / 3)) + 20)
+    message("Help Menu", width_fraction=75)
     m_menu = create_menu(
         main_menu, headers=headers, use_headers=True, verbose=verbose, pad=pad
     )
@@ -248,9 +248,9 @@ def line(length: int = MAX_WIDTH, verbose: bool = False) -> str:
 def message(
     text: str,
     colr: str = "",
-    width: int = round(MAX_WIDTH / 2),
+    width: int = 0,
     verbose: bool = True,
-    width_fraction: float = 50.0,
+    width_fraction: float = 90.0,
     end="",
     print_func=print,
     **kwargs,
@@ -302,9 +302,9 @@ def message(
 def message_error(
     text: str,
     colr: str = "red",
-    width: int = round(MAX_WIDTH / 2),
+    width: int = 0,
     verbose: bool = True,
-    width_fraction: float = 50.0,
+    width_fraction: float = 90.0,
     end="",
     print_func=print,
     **kwargs,
@@ -315,9 +315,9 @@ def message_error(
 def message_caution(
     text: str,
     colr: str = "yellow",
-    width: int = round(MAX_WIDTH / 2),
+    width: int = 0,
     verbose: bool = True,
-    width_fraction: float = 50.0,
+    width_fraction: float = 90.0,
     end="",
     print_func=print,
     **kwargs,
@@ -328,9 +328,9 @@ def message_caution(
 def message_ok(
     text: str,
     colr: str = "lime",
-    width: int = round(MAX_WIDTH / 2),
+    width: int = 0,
     verbose: bool = True,
-    width_fraction: float = 50.0,
+    width_fraction: float = 90.0,
     end="",
     print_func=print,
     **kwargs,
