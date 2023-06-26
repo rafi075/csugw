@@ -70,7 +70,6 @@ class Client:
                 )
                 time.sleep(wait_time)
 
-
     def __process_message(self, message: Protocol, is_receiving=False):
         if not message:
             CLI.message_caution("GOT EMPTY MESSAGE", print_func=self.__print_thread)
@@ -78,7 +77,12 @@ class Client:
 
         if message == Protocols.INITIALIZE:
             if not self.initialized:
-                self.__send_data(Protocols.INITIALIZE)
+                message = Protocol(
+                    method=ProtocolMethod.INIT,
+                    id=self.id,
+                    content="Nothing Neat",
+                )
+                self.__send_data(message)
                 self.initialized = True
             else:
                 CLI.message_ok(
@@ -126,6 +130,7 @@ class Client:
 
     def __command_line(self):
         from cli_commands import CLI_DEFAULT_COMMANDS, CLI_CLIENT_COMMANDS
+
         self.custom_commands = self.custom_commands + CLI_CLIENT_COMMANDS
         while not self.__exit_event.is_set():
             try:
@@ -177,11 +182,7 @@ class Client:
                         else function(*input_segments[1:])
                     )
                 else:
-                    return (
-                        function(self)
-                        if need_self
-                        else function()
-                    )
+                    return function(self) if need_self else function()
         else:
             print(f"Command '{input_segments}' not found.")
         return "VOID"
@@ -207,13 +208,14 @@ class Client:
         self.__send_data(message, sign=sign)
 
     def __is_active(self, stream, timeout=1):
-        if os.name == 'nt':  # for Windows
+        if os.name == "nt":  # for Windows
             if type(stream) is socket.socket:
                 ready, _, _ = select.select([stream], [], [], timeout)
                 return ready
-            
+
             import msvcrt
             import time
+
             start_time = time.time()
             while True:
                 if msvcrt.kbhit():  # keypress is waiting, return True
@@ -266,7 +268,6 @@ class Client:
         CLI.message_error("TERMINATED BY SERVER", print_func=self.__print_thread)
         self.running = False
         self.__exit_event.set()
-        
 
     def __print_thread(self, *args, **kwargs):
         kwargs = {**{"sep": " ", "end": "\n"}, **kwargs}
@@ -278,6 +279,7 @@ class Client:
 
     def show_help_menu(self):
         from cli_commands import CLI_DEFAULT_COMMANDS
+
         results = CLI.create_help_menu(
             self.custom_commands, CLI_DEFAULT_COMMANDS, verbose=False
         )
@@ -286,7 +288,6 @@ class Client:
 
     def display_network(self):
         CLI.message_ok(self.__get_socket_address(self.sock))
-        
 
 
 def get_args():

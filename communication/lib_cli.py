@@ -109,9 +109,9 @@ def create_help_menu(
     help_menu: list[dict],
     headers: list[str] = ["Commands", "Description"],
     verbose=True,
-    pad=70,
+    pad=50,
 ):
-    message("Help Menu", width_fraction=75)
+    message("Help Menu", width_fraction=90)
     m_menu = create_menu(
         main_menu, headers=headers, use_headers=True, verbose=verbose, pad=pad
     )

@@ -56,17 +56,19 @@ class Protocol:
         method: ProtocolMethod or str = ProtocolMethod.DEFAULT,
         state: ProtocolState or str = ProtocolState.DEFAULT,
         content: str = "",
+        id: str = "...",
         json_data: dict = None,
     ):
         self.method = self._validate_enum(method, ProtocolMethod)
         self.protocol_type = self._validate_enum(protocol_type, ProtocolType)
         self.state = self._validate_enum(state, ProtocolState)
 
+        self.id = id
         self.content = f"{content}"
         self.node = None
         self.data = {}
 
-        self._populate_data(id="...")
+        self._populate_data()
         if json_data is not None:
             self._populate_from_json(json_data)
             self.data = {Field[key]: value for key, value in json_data.items()}
@@ -85,10 +87,10 @@ class Protocol:
             )
         return enum.DEFAULT
 
-    def _populate_data(self, id="..."):
+    def _populate_data(self):
         self.data = {
             Field.TYPE: self.protocol_type.value,
-            Field.ID: id,
+            Field.ID: self.id,
             Field.METHOD: self.method.value,
             Field.BODY: self.content,
             Field.STATE: ProtocolState.DEFAULT.value,
@@ -99,10 +101,11 @@ class Protocol:
         self.protocol_type = ProtocolType[json_data[Field.TYPE.name]]
         self.state = ProtocolState[json_data[Field.STATE.name]]
         self.content = json_data[Field.BODY.name]
+        self.id = json_data[Field.ID.name]
 
     def get_data(self, node=None) -> dict:
         self.node = node
-        self._populate_data(id="...")
+        self._populate_data()
 
         data = {key.name: value for key, value in self.data.items()}
         jsonschema.validate(instance=data, schema=DEFAULT_SCHEMA)
@@ -125,7 +128,7 @@ class Protocol:
     def __bool__(self):
         try:
             # self.get_data()
-            self._populate_data(id="...")
+            self._populate_data()
         except:
             print("Failed to get data")
             return False

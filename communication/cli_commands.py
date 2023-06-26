@@ -30,7 +30,7 @@ CLI_CLIENT_COMMANDS = [
 CLI_DEFAULT_COMMANDS = []
 CLI_DEFAULT_COMMANDS = [
     {
-        "Commands": ["help", "h", "?", "--help", "-h"],
+        "Commands": ["help", "h", "?"],
         "Description": "Displays help menu",
         "Function": "show_help_menu",
         "Parameters": 0,
@@ -48,7 +48,7 @@ CLI_DEFAULT_COMMANDS = [
         "Parameters": 0,
     },
     {
-        "Commands": ["exit", "quit", "kill", "q"],
+        "Commands": ["exit", "quit", "kill"],
         "Description": "Exits the program",
         "Function": "shutdown",
         "Parameters": 1,

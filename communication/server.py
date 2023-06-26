@@ -192,7 +192,8 @@ class Server:
 
         # TODO: Implement AWK
         self.__send_data(client, Protocols.INITIALIZE)
-        client_node = Node(client, response["ID"])
+
+        client_node = Node(client, response[Field.ID])
         self.__clients.append(client_node)
         CLI.line()
         CLI.message_ok(
