@@ -28,8 +28,12 @@ LOG_PADDING = 0
 LOG = True
 
 
-# TODO: parse config file
-# TODO: get_client_by_id, get_clients_by_tag
+# DONE: parse config file
+# DONE: get_client_by_id, get_clients_by_tag
+#
+# TODO: initialize clients based on config
+#       discuss whether the program should block until all clients are initialized?
+
 
 class Server:
     def __init__(
@@ -420,31 +424,6 @@ class Server:
             else:  # for Unix/Linux/MacOS/BSD/etc
                 ready, _, _ = select.select([stream], [], [], timeout)
                 return bool(ready)
-
-
-        # if type(stream) is socket.socket:
-        #     ready, _, _ = select.select([stream], [], [], timeout)
-        #     return ready
-        
-        # elif os.name == 'nt': # Windows
-        #     start_time = time.time()
-        #     while True:
-        #         if msvcrt.kbhit():  # keypress is waiting, return True
-        #             return True
-        #         if time.time() - start_time > timeout:  # timeout
-        #             return False
-        # else:  # for Unix/Linux/MacOS/BSD/etc
-
-
-        # ready, _, _ = select.select([sys.stdin], [], [], timeout)
-        # return bool(ready)        
-
-
-
-
-        # ready, _, _ = select.select([stream], [], [], timeout)
-        # return ready
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
