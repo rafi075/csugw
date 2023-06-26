@@ -37,6 +37,7 @@ class Server:
     ):
         self.host = host
         self.port = port
+        self.__config_content = []
         self.__clients = []
         self.__threads = []
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -226,6 +227,44 @@ class Server:
         )
         self.__log_receive(message, addr)
         return message
+
+    def init_config(self, file_path):
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+        
+        # Extract the 'Nodes' list
+        self.__config_content = data['Nodes']
+
+    def pop_config(self, socket:socket) -> Node:
+        def default(data, key, default):
+            return data[key] if key in data else default
+
+        if len(self.__config_content) > 0:
+            data = self.__config_content.pop(0)
+            node = Node(
+                socket=socket,
+                ID = default(data, 'ID', 'DefaultID'),
+                tags = default(data, 'Tags', []),
+                IP = default(data, 'IP', '127.0.0.1'),
+                PORT = default(data, 'PORT', '5000'),
+                net_mask=default(data, 'SUBNET_MASK', '255.255.255.0'),
+            )
+            return Node(node)
+        else:
+            return None
+    
+
+    def get_client_by_tag(self, tag:str) -> Node:
+        for client in self.__clients:
+            if tag in client.tags:
+                return client
+        return None
+
+    def get_client_by_id(self, client_id:str) -> Node:
+        for client in self.__clients:
+            if client.ID == client_id:
+                return client
+        return None
 
     def disconnect_client(self, client: Node):
         try:
