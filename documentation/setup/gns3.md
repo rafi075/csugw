@@ -7,7 +7,7 @@
     - [Virtual Machines](#virtual-machines)
     - [Binary Files](#binary-files)
     - [Useful Tips](#useful-tips)
-  - [:white\_check\_mark: Next Step](#white_check_mark-next-step)
+  - [:heavy\_check\_mark: Next Step](#white_check_mark-next-step)
 
 
 
@@ -27,4 +27,4 @@
 ---
 
 
-## [:white_check_mark: Next Step](../demo/firstproject.md)
+## [:heavy_check_mark: Next Step](../demo/firstproject.md)

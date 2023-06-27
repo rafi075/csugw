@@ -4,20 +4,20 @@
 
 - [Communication Library](#communication-library)
   - [Table of Contents](#table-of-contents)
-  - [🗎 Server](#-server)
+  - [:page_facing_up: Server](#-server)
     - [Requirements](#requirements)
     - [Exmaple Usage](#exmaple-usage)
     - [Key Components](#key-components)
-  - [🗎 Client](#-client)
+  - [:page_facing_up: Client](#-client)
     - [Requirements](#requirements-1)
     - [Exmaple Usage](#exmaple-usage-1)
     - [Key Components](#key-components-1)
-  - [🗎 API Wrapper](#-api-wrapper)
+  - [:page_facing_up: API Wrapper](#-api-wrapper)
     - [Variables](#variables)
     - [Methods](#methods)
     - [Expected API Behavior](#expected-api-behavior)
 
-## [🗎](./server.py) Server
+## [:page_facing_up:](./server.py) Server
 
 Python chat server that listens for client connections on a specified IP address and port.
 
@@ -62,7 +62,7 @@ The server program has several important components:
 
     The server uses an API class from another script (as defined in api.py). This class provides a way to interface with an external program, although the server script doesn't directly use this API in handling client connections.
 
-## [🗎](./client.py) Client
+## [:page_facing_up:](./client.py) Client
 
 Python client that connects to a server using a specified IP address and port.
 
@@ -97,7 +97,7 @@ Python client that connects to a server using a specified IP address and port.
 
      This function continuously reads incoming messages from the server and prints them to the console. It only prints messages that are prefixed with 'RECEIVE:', which are the ones relayed from the server.
 
-## [🗎](./api.py) API Wrapper
+## [:page_facing_up:](./api.py) API Wrapper
 
 This module provides a Python wrapper for an external command line program. The main purpose of this API is to allow Python scripts to interface with the external programs, which would be typically used in a command line context. This is done by executing shell commands from within Python code and retrieving its output. The primary use of this API will be to communicate with the Simulator API.
 

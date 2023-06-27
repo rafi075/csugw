@@ -95,8 +95,8 @@ The configurations yeild the following:
 
 To confirm everything is working, you should be able to ping any device from any other device, including the host machine. Ensure your results match the ping matrix below.
 
-| Ping-able             | :white_check_mark: Windows Host (Cloud)       | :white_check_mark: Router (R1)                | :white_check_mark: VirtualPC (PC1)            |
+| Ping-able             | :heavy_check_mark: Windows Host (Cloud)       | :heavy_check_mark: Router (R1)                | :heavy_check_mark: VirtualPC (PC1)            |
 |---------------------- |--------------------------- |--------------------------- |--------------------------- |
-| :white_check_mark: Windows Host (Cloud)  | 10.1.1.100 --> 10.1.1.100  | 10.1.1.100 --> 10.1.1.120  | 10.1.1.100 --> 10.1.1.130  |
-| :white_check_mark: Router (R1)           | 10.1.1.120 --> 10.1.1.100  | 10.1.1.120 --> 10.1.1.120  | 10.1.1.120 --> 10.1.1.130  |
-| :white_check_mark: VirtualPC (PC1)       | 10.1.1.130 --> 10.1.1.100  | 10.1.1.130 --> 10.1.1.120  | 10.1.1.130 --> 10.1.1.130  |
+| :heavy_check_mark: Windows Host (Cloud)  | 10.1.1.100 --> 10.1.1.100  | 10.1.1.100 --> 10.1.1.120  | 10.1.1.100 --> 10.1.1.130  |
+| :heavy_check_mark: Router (R1)           | 10.1.1.120 --> 10.1.1.100  | 10.1.1.120 --> 10.1.1.120  | 10.1.1.120 --> 10.1.1.130  |
+| :heavy_check_mark: VirtualPC (PC1)       | 10.1.1.130 --> 10.1.1.100  | 10.1.1.130 --> 10.1.1.120  | 10.1.1.130 --> 10.1.1.130  |
