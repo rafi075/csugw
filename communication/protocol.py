@@ -22,7 +22,9 @@ class ProtocolMethod(Enum):
     INIT = "INIT"
     EXIT = "EXIT"
     SHOW = "SHOW"
-    TEST = "TEST"
+
+
+    DEMO = "DEMO"
 
 
 class Field(Enum):

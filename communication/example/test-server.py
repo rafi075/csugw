@@ -5,7 +5,7 @@ from server import Server
 import lib_cli as CLI
 from protocol import *
 
-
+bDoubled = False
 def program_arguments():
     parser = argparse.ArgumentParser(
         description="This is a program that accepts IP address and Port number"
@@ -21,24 +21,54 @@ def program_arguments():
     return parser.parse_args()
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def custom_logic(obj: Server, client: Node, message: Protocol or str):
+    global bDoubled
     CLI.message_ok("CUSTOM LOGIC", colr="BlueViolet")
 
-    if message == ProtocolMethod.TEST:
-        CLI.message_ok("TEST", colr="BlueViolet")
+    if message == ProtocolMethod.DEMO and not bDoubled:
+        # Show custom logic is being ran
+        CLI.message_ok("DEMO", colr="BlueViolet")
+
+        # Send a number to the client
+        message.content = "10"
         obj.send(client, message)
-        return False
-    elif message[Field.BODY] == "Client Confirmed":
-        CLI.message_ok("CLIENT CONFIRMED", colr="BlueViolet")
-        return False
-    else:
-        return False
+        
+        bDoubled = True
+
+    return False
+
 
 
 
 args = program_arguments()
+
 server = Server(host=args.IPv4Address, 
                 port=args.Port, 
                 custom_logic=custom_logic)
+
 
 server.run()

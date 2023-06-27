@@ -6,7 +6,7 @@ import lib_cli as CLI
 from protocol import *
 from attack import attack_lib
 
-
+bDoubled = False
 def program_arguments():
     parser = argparse.ArgumentParser(
         description="This is a program that accepts IP address and Port number"
@@ -17,25 +17,65 @@ def program_arguments():
     return parser.parse_args()
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def custom_logic(obj: Client, client: Node, message: Protocol or str):
+    global bDoubled
     CLI.message_ok("CUSTOM LOGIC", colr="BlueViolet")
 
-    if attack_lib():
-        return False
+    # if attack_lib():
+    #     return False
 
-    if message == ProtocolMethod.TEST:
-        CLI.message_ok("TEST", colr="BlueViolet")
-        obj.send(Protocol(content=f"TEST"))
-        return False
-    else:
-        CLI.message_ok("BASE CASE", colr="BlueViolet")
-        return False
+    if message == ProtocolMethod.DEMO and not bDoubled:
+        # Show custom logic is being ran
+        CLI.message_ok(f"DEMO {message.content}", colr="BlueViolet")
+
+        # Double the number received
+        number = int(message.content)
+        response = number * 2
+        message.content= f"{response}"
+
+        # Send the doubled number back to the client
+        obj.send(message)
+
+        bDoubled = True
+
+    return False
+
 
 
 
 args = program_arguments()
+
 client = Client(args.id, 
                 host=args.IPv4Address, 
                 port=args.Port, 
                 custom_logic=custom_logic)
+
 client.run()
