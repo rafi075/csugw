@@ -1,40 +1,48 @@
 {
-    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
     "description": "This document contains important configuration information for nodes used in the GNS3 Simulator",
-    "Node": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-            "ID": {
-                "description": "ID or Name of the node, for human use only",
-                "type": "string"
-            },
-            "IP": {
-                "description": "IP address of the node. This will be used to configure the nodes and must be accurate.",
-                "type": "string"
-            },
-            "SUBNET_MASK": {
-                "description": "Network mask of the node. This will be used to configure the nodes and must be accurate.",
-                "type": "string"
-            },
-            "TAGS": {
-                "type": "array",
-                "items": {
-                    "description": "List of component TAGS for the simulator",
-                    "type": "string"
-                }
-            },
-            "METHOD": {
-                "description": "Method or emulated logic to perform",
-                "type": "string"
-            }
-        },
-        "required": [
-            "ID",
-            "IP",
-            "SUBNET_MASK",
-            "TAGS"
-        ],
-        "title": "Configuration for a single Node"
-    }
+    "properties": {
+        "Nodes": {
+            "type": "array",
+            "items": [{
+                "type": "object",
+                "properties": {
+                    "ID": {
+                        "type": "string",
+                        "description": "ID or Name of the node, for human use only"
+                    },
+                    "IP": {
+                        "type": "string",
+                        "description": "IP address of the node. This will be used to configure the nodes and must be accurate."
+                    },
+                    "SUBNET_MASK": {
+                        "type": "string",
+                        "description": "Network mask of the node. This will be used to configure the nodes and must be accurate."
+                    },
+                    "TAGS": {
+                        "type": "array",
+                        "description": "List of component TAGS for the simulator",
+                        "items": [{
+                            "type": "string",
+                            "description": "TAG for the simulator."
+                        }]
+                    },
+                    "METHOD": {
+                        "type": "string",
+                        "description": "Method or emulated logic to perform"
+                    }
+                },
+                "required": [
+                    "ID",
+                    "IP",
+                    "SUBNET_MASK",
+                    "TAGS"
+                ]
+            }]
+        }
+    },
+    "required": [
+        "Nodes"
+    ]
 }

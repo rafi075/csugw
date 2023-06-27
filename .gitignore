@@ -1,0 +1,6 @@
+communication/__pycache__
+communication/.dist
+communication/cli_testfile.py
+.vscode
+.dist
+communication/notes.py
