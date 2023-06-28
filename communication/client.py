@@ -129,7 +129,7 @@ class Client:
                 break
 
     def __command_line(self):
-        from cli_commands import CLI_DEFAULT_COMMANDS, CLI_CLIENT_COMMANDS
+        from cli_commands import CLI_CLIENT_COMMANDS
 
         self.custom_commands = self.custom_commands + CLI_CLIENT_COMMANDS
         while not self.__exit_event.is_set():
