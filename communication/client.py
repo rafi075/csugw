@@ -290,6 +290,7 @@ class Client:
         CLI.message_ok(self.__get_socket_address(self.sock))
 
 
+
 def get_args():
     parser = argparse.ArgumentParser(
         description="This is a program that accepts IP address and Port number"
@@ -312,3 +313,11 @@ if __name__ == "__main__":
     client = Client(client_id, host=args.IPv4Address, port=args.Port)
     client.run()
     exit(0)
+
+
+
+
+
+
+
+
