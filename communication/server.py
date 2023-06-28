@@ -49,8 +49,6 @@ class Server:
         self.sock.settimeout(1)
         self.sock.listen()
         self.running = True
-        self.numClients = 0
-
 
         self.custom_commands = [] if custom_commands is None else custom_commands
         self.custom_logic = custom_logic
@@ -64,12 +62,9 @@ class Server:
 
 
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
-
-
         self.config_path = os.path.join(self.dir_path, 'config.json')
         self.config_schema_path = os.path.join(self.dir_path, 'config_schema.json')
-
-
+        self.max_clients = 0
 
     def __process_message(self, client, message: Protocol, is_receiving=False):
         if not message:
@@ -174,13 +169,13 @@ class Server:
     def __receive(self):
         self.sock.setblocking(False)
         while not self.__exit_event.is_set():
-            ready_to_read, _, _ = select.select([self.sock], [], [], 1)
-            if ready_to_read:
+            # ready_to_read, _, _ = select.select([self.sock], [], [], 1)
+            if self.__is_active(self.sock):
                 client, address = self.sock.accept()
                 with self.__locks["clients"]:
                     if address not in self.__clients:
                         client_node = self.__initialize_client(client)
-                if client_node:
+                if client_node is not None:
                     with self.__locks["thread"]:
                         self.__threads.append(
                             threading.Thread(
@@ -190,7 +185,13 @@ class Server:
                         self.__threads[-1].start()
 
     def __initialize_client(self, client):
-        self.numClients += 1
+        if len(self.__clients) == self.max_clients:
+            CLI.message_error(
+                "MAX CLIENTS CONNECTED", print_func=self.__print_thread
+            )
+            client.close()
+            return None
+
         self.__send_data(client, Protocols.INITIALIZE)
 
         while not self.__is_active(client):
@@ -204,8 +205,7 @@ class Server:
 
         # TODO: Implement AWK
         self.__send_data(client, Protocols.INITIALIZE)
-        print(f"Number of clients: {self.numClients}")
-        # client_node = Node(client, response[Field.ID])
+
         client_node = self.pop_config(client)
         self.__clients.append(client_node)
         CLI.line()
@@ -260,7 +260,7 @@ class Server:
                 data = json.load(f)
                 jsonschema.validate(instance=data, schema=schema)
                 self.__config_content = list(data['Nodes'])
-                print(self.__config_content)
+                self.max_clients = len(self.__config_content)
         except FileNotFoundError:
             print(f"The file '{file_path}' does not exist.")
         except json.JSONDecodeError:
@@ -402,8 +402,10 @@ class Server:
         results = CLI.create_help_menu(
             self.custom_commands, CLI_DEFAULT_COMMANDS, verbose=False
         )
+
         self.__print_thread(results[0])
         self.__print_thread(results[1])
+
 
     def __log_send(self, message, addr):
         if LOG:

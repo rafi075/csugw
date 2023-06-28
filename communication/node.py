@@ -107,6 +107,7 @@ class Node:
         mask = (0xFFFFFFFF >> (32 - cidr)) << (32 - cidr)
         return f"{(mask >> 24) & 0xff}.{(mask >> 16) & 0xff}.{(mask >> 8) & 0xff}.{mask & 0xff}"
     
+    
 
 class HelpMenu:
     SPACING = 80
@@ -217,4 +218,5 @@ class HelpMenu:
         return [prefix, *item_name]
 
     def get_name_or_val(self, value) -> str:
-        return value.__name__ if hasattr(value, "__name__") else output
+        return value.__name__ if hasattr(value, "__name__") else value
+
