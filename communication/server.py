@@ -49,6 +49,8 @@ class Server:
         self.sock.settimeout(1)
         self.sock.listen()
         self.running = True
+        self.numClients = 0
+
 
         self.custom_commands = [] if custom_commands is None else custom_commands
         self.custom_logic = custom_logic
@@ -59,6 +61,15 @@ class Server:
             "print": threading.Lock(),
             "thread": threading.Lock(),
         }
+
+
+        self.dir_path = os.path.dirname(os.path.realpath(__file__))
+
+
+        self.config_path = os.path.join(self.dir_path, 'config.json')
+        self.config_schema_path = os.path.join(self.dir_path, 'config_schema.json')
+
+
 
     def __process_message(self, client, message: Protocol, is_receiving=False):
         if not message:
@@ -179,6 +190,7 @@ class Server:
                         self.__threads[-1].start()
 
     def __initialize_client(self, client):
+        self.numClients += 1
         self.__send_data(client, Protocols.INITIALIZE)
 
         while not self.__is_active(client):
@@ -192,12 +204,13 @@ class Server:
 
         # TODO: Implement AWK
         self.__send_data(client, Protocols.INITIALIZE)
-
-        client_node = Node(client, response[Field.ID])
+        print(f"Number of clients: {self.numClients}")
+        # client_node = Node(client, response[Field.ID])
+        client_node = self.pop_config(client)
         self.__clients.append(client_node)
         CLI.line()
         CLI.message_ok(
-            f"CLIENT CONNECTED: {str(client_node._strIPPORT)}",
+            f"CLIENT CONNECTED: {str(client_node.network_string)}",
             print_func=self.__print_thread,
         )
 
@@ -208,7 +221,7 @@ class Server:
 
     def __send_data(self, client, message: Protocol, encoding="ascii"):
         addr = (
-            CLI.color("aquamarine", client._strIPPORT)
+            CLI.color("aquamarine", client.network_string)
             if type(client) is Node
             else self.__get_socket_address(client)
         )
@@ -226,19 +239,34 @@ class Server:
         message = client.recv(buff_size).decode(decoding)
         message: Protocol = Protocol.from_network(message)
         addr = (
-            client._strIPPORT
+            client.network_string
             if type(client) is Node
             else self.__get_socket_address(client)
         )
         self.__log_receive(message, addr)
         return message
 
-    def init_config(self, file_path):
-        with open(file_path, 'r') as f:
-            data = json.load(f)
-        
-        # Extract the 'Nodes' list
-        self.__config_content = data['Nodes']
+    def __init_config(self, file_path = None, schema_path = None):
+        try:
+            with open(self.config_schema_path if schema_path is None else schema_path, 'r') as f:
+                schema = json.load(f)
+        except FileNotFoundError:
+            print(f"The file '{schema_path}' does not exist.")
+        except json.JSONDecodeError:
+            print(f"The file could not be parsed as JSON.")
+
+        try:
+            with open(self.config_path if file_path is None else file_path, 'r') as f:
+                data = json.load(f)
+                jsonschema.validate(instance=data, schema=schema)
+                self.__config_content = list(data['Nodes'])
+                print(self.__config_content)
+        except FileNotFoundError:
+            print(f"The file '{file_path}' does not exist.")
+        except json.JSONDecodeError:
+            print(f"The file could not be parsed as JSON.")
+        except jsonschema.exceptions.ValidationError:
+            print(f"The file '{file_path}' does not adhere to the configuration schema defined in {schema_path}.")
 
     def pop_config(self, socket:socket) -> Node:
         def default(data, key, default):
@@ -246,16 +274,9 @@ class Server:
 
         if len(self.__config_content) > 0:
             data = self.__config_content.pop(0)
-            node = Node(
-                socket=socket,
-                ID = default(data, 'ID', 'DefaultID'),
-                tags = default(data, 'Tags', []),
-                IP = default(data, 'IP', '127.0.0.1'),
-                PORT = default(data, 'PORT', '5000'),
-                net_mask=default(data, 'SUBNET_MASK', '255.255.255.0'),
-            )
-            return Node(node)
+            return Node(socket, config_data = data)
         else:
+            CLI.message_error("Config is empty")
             return None
     
 
@@ -282,7 +303,7 @@ class Server:
             self.__clients.remove(client)
 
         CLI.message_caution(
-            f"CLIENT DISCONNECTED: {str(client._strIPPORT)}",
+            f"CLIENT DISCONNECTED: {str(client.network_string)}",
             print_func=self.__print_thread,
         )
 
@@ -348,8 +369,14 @@ class Server:
 
     def run(self):
         CLI.clear_terminal()
+        self.__init_config()
+
         CLI.message_ok(
             f"SERVER STARTED {self.host}:{self.port}", print_func=self.__print_thread
+        )
+
+        CLI.message_caution(
+            f"Configured For MAX {len(self.__config_content)} clients.", print_func=self.__print_thread
         )
         self.sock.listen()
         self.__threads.extend(
