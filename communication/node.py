@@ -1,11 +1,12 @@
 import ipaddress as ip
 import socket
+
+import jsonschema
 from lib_cli import print_array, table, message
 
 DEFAULT_IP = "10.1.2.1"
 DEFAULT_PORT = 5000
 DEFAULT_GATEWAY = "10.1.1.1"
-
 
 class Node:
     def __init__(
@@ -17,26 +18,50 @@ class Node:
         PORT: str or int = DEFAULT_PORT,
         net_mask: str or int = 24,
         gateway: str or ip.IPv4Address = DEFAULT_GATEWAY,
+        config_data: dict = None,
     ):
-        self.ID = ID
         self.socket = socket
         peerName = socket.getpeername()
-        self.PORT = int(peerName[1])
-        self.IP = ip.IPv4Address(str(peerName[0]))
-        self._strIPPORT = str(self.IP) + ":" + str(self.PORT)
+
+        def default(data, key, default):
+            return data[key] if key in data else default
+        
+        if config_data is not None:
+            self.ID = config_data["ID"]
+            self.IP = ip.IPv4Address(str(config_data["IP"]))
+            self.PORT = default(config_data, "PORT", int(peerName[1]))
+
+            if "." in str(config_data["SUBNET_MASK"]):
+                self.net_mask = (config_data["SUBNET_MASK"], Node.netmask_to_cidr(config_data["SUBNET_MASK"]))
+            else:
+                self.net_mask = (Node.cidr_to_netmask(config_data["SUBNET_MASK"]), config_data["SUBNET_MASK"])
+        else:
+            self.ID = ID
+            self.PORT = int(peerName[1])
+            self.IP = ip.IPv4Address(str(peerName[0]))
+        
+            if "." in str(net_mask):
+                self.net_mask = (net_mask, Node.netmask_to_cidr(net_mask))
+            else:
+                self.net_mask = (Node.cidr_to_netmask(net_mask), net_mask)
+        
+        self.network_string = str(self.IP) + ":" + str(self.PORT)
         self.network = f""
 
-        if "." in str(net_mask):
-            self.net_mask = (net_mask, Node.netmask_to_cidr(net_mask))
-        else:
-            self.net_mask = (Node.cidr_to_netmask(net_mask), net_mask)
-
+        # print(self.IP)
         self.gateway = ip.IPv4Address(str(gateway))
         self.network = ip.IPv4Network(
             f"{'.'.join(str(self.IP).split('.')[:-1])}.0/{str(self.net_mask[1])}"
         )
-        self.neighbors = []
-        self.tags = tags
+
+
+        if config_data is not None:
+            self.neighbors = default(config_data, "NEIGHBORS", [])
+            self.tags = config_data["TAGS"]
+        else:
+            self.neighbors = []
+            self.tags = tags
+
         self.help = HelpMenu(
             self,
             generic_data_keys=[
@@ -75,35 +100,13 @@ class Node:
 
     @staticmethod
     def netmask_to_cidr(network_mask: str) -> str:
-        """
-        Summary
-        -------------
-        Convert a network mask to CIDR notation.
-
-        Args
-        -------------
-            - `network_mask` (`str`): Full network mask (e.g. "255.255.255.240")
-
-        Returns
-        -------------
-            - `str`: CIDR notation (e.g. "28")
-
-        Example
-        -------------
-        ```python
-            print(node.subnet_to_cidr("255.255.255.0"))
-        >>> 24
-            print(node.subnet_to_cidr("255.255.255.240"))
-        >>> 28
-        ```
-        """
         return ip.IPv4Network(f"0.0.0.0/{network_mask}").prefixlen
 
     @staticmethod
     def cidr_to_netmask(cidr):
         mask = (0xFFFFFFFF >> (32 - cidr)) << (32 - cidr)
         return f"{(mask >> 24) & 0xff}.{(mask >> 16) & 0xff}.{(mask >> 8) & 0xff}.{mask & 0xff}"
-
+    
 
 class HelpMenu:
     SPACING = 80
