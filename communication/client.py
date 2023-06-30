@@ -12,6 +12,7 @@ import time
 import traceback
 from api import API
 import jsonschema
+from node import Node
 
 import lib_cli as CLI
 
@@ -51,6 +52,7 @@ class Client:
 
         self.custom_logic = custom_logic
         self.custom_commands = [] if custom_commands is None else custom_commands
+        self.node: Node = None
 
         self.__selector_sock = selectors.DefaultSelector()
         self.__selector_input = selectors.DefaultSelector()
@@ -75,25 +77,34 @@ class Client:
             CLI.message_caution("GOT EMPTY MESSAGE", print_func=self.__print_thread)
             return False
 
-        if message == Protocols.INITIALIZE:
-            if not self.initialized:
-                message = Protocol(
-                    method=ProtocolMethod.INIT,
-                    id=self.id,
-                    content="Nothing Neat",
-                )
+        if message == ProtocolMethod.INIT:
+            if message.state == ProtocolState.REQ_AWK:
+                self.node = Node(self.sock, config_data = json.loads(message.content))
+                message = Protocol(method=ProtocolMethod.INIT, state=ProtocolState.AWK)
                 self.__send_data(message)
-                self.initialized = True
+                return False
+            elif message.state == ProtocolState.SUCCESS:
+                CLI.message_ok("CONNECTED", print_func=self.__print_thread)
+                return False
             else:
-                CLI.message_ok(
-                    "INITIALIZATION SUCCESSFUL", print_func=self.__print_thread
-                )
+                CLI.message_error("INIT FAILED", print_func=self.__print_thread)
+                return True
+
+        if message == ProtocolMethod.COMMAND:
+            # msg = message.content.split(" ")
+            self.run_command(*message.content.split(" "))
             return False
 
-        if message == Protocols.DISCONNECT:
-            self.disconnect()
-            return True
+        if message == ProtocolMethod.SCRIPT:
+            # msg = message.content.split(" ")
+            self.run_script(*message.content.split(" "))
+            return False
 
+        if message == ProtocolMethod.EXIT:
+            return self.disconnect(state = message.state)
+
+
+            
         if self.custom_logic is not None:
             return self.custom_logic(self, self.sock, message)
 
@@ -228,6 +239,8 @@ class Client:
 
     def __send_data(self, message, sign: bool = True, encoding: str = "ascii"):
         if type(message) is Protocol:
+            if sign:
+                message.id = self.node.ID
             message = message.to_network(encoding=encoding)
             self.__log_send(message)
             self.sock.send(message)
@@ -246,13 +259,13 @@ class Client:
 
     def __log_send(self, message):
         if LOG:
-            output = f"[LOG] {CLI.color('steelblue', 'SENDING:')}\n"
+            output = f"[LOG - {time.strftime('%X')}] {CLI.color('steelblue', 'SENDING:')}\n"
             output += f'{self.__get_socket_address(self.sock)} {"-->"} {str(message):<{LOG_PADDING}}\n'
             self.__print_thread(output, clr="gray")
 
     def __log_receive(self, message):
         if LOG:
-            output = f"[LOG] {CLI.color('tomato', 'RECEIVED:')}\n"
+            output = f"[LOG - {time.strftime('%X')}] {CLI.color('tomato', 'RECEIVED:')}\n"
             output += f'{self.__get_socket_address(self.sock)} {"<--"} {str(message):<{LOG_PADDING}}\n'
             self.__print_thread(output, clr="gray")
 
@@ -261,13 +274,32 @@ class Client:
         return CLI.color("aquamarine", f"{str(peer_name[0])} : {str(peer_name[1])}")
 
     def shutdown(self):
-        self.disconnect()
+        self.disconnect(state = ProtocolState.DEFAULT)
 
-    def disconnect(self):
-        self.__send_data(Protocols.DISCONNECT)
-        CLI.message_error("TERMINATED BY SERVER", print_func=self.__print_thread)
-        self.running = False
-        self.__exit_event.set()
+    def  disconnect(self, state:ProtocolState = ProtocolState.AWK):
+        if state == ProtocolState.REQ_AWK:
+            self.__send_data(Protocol(method=ProtocolMethod.EXIT, state=ProtocolState.AWK))
+            CLI.message_error("CONNECTION CLOSED BY SERVER", print_func=self.__print_thread)
+            self.sock.close()
+            self.running = False
+            self.__exit_event.set()
+            return True
+        
+        if state == ProtocolState.AWK:
+            CLI.message_error("CONNECTION CLOSED", print_func=self.__print_thread)
+            self.sock.close()
+            self.running = False
+            self.__exit_event.set()
+            return True
+        
+        if state == ProtocolState.DEFAULT:
+            CLI.message_caution("REQUESTING TERMINATION", print_func=self.__print_thread)
+            self.__send_data(Protocol(method=ProtocolMethod.EXIT, state=ProtocolState.REQ_AWK))
+            return False
+
+
+        # self.running = False
+        # self.__exit_event.set()
 
     def __print_thread(self, *args, **kwargs):
         kwargs = {**{"sep": " ", "end": "\n"}, **kwargs}
@@ -289,21 +321,22 @@ class Client:
     def display_network(self):
         CLI.message_ok(self.__get_socket_address(self.sock))
 
-    def os_set_IP(self, ip: str, interface:str = "ens33"):
+    def os_set_IP(self, ip: str, interface: str = "ens33"):
         output = API.exe_bash("/root/scripts/set_ip", ip, interface)
         print(output)
         return output
 
     def run_script(self, command: str, *args):
-        output = API.exe_bash(f"/root/scripts/{command}", *args)
+        prefix = "./" if command[0] != "/" else ""
+        output = API.exe_bash(f"{prefix}{command}", *args)
+        # output = API.exe_bash(f"/root/scripts/{command}", *args)
         print(output)
         return output
-    
+
     def run_command(self, command: str, *args):
         output = API.exe_bash(f"{command}", *args)
         print(output)
         return output
-
 
 
 def get_args():
@@ -328,11 +361,3 @@ if __name__ == "__main__":
     client = Client(client_id, host=args.IPv4Address, port=args.Port)
     client.run()
     exit(0)
-
-
-
-
-
-
-
-

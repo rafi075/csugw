@@ -42,6 +42,8 @@ class Server:
         self.host = host
         self.port = port
         self.__config_content = []
+        self.__config_content_queue = []
+        self.__config_last_entry = -1
         self.__clients = []
         self.__threads = []
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -60,10 +62,9 @@ class Server:
             "thread": threading.Lock(),
         }
 
-
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.config_path = os.path.join(self.dir_path, 'config.json')
-        self.config_schema_path = os.path.join(self.dir_path, 'config_schema.json')
+        self.config_path = os.path.join(self.dir_path, "config.json")
+        self.config_schema_path = os.path.join(self.dir_path, "config_schema.json")
         self.max_clients = 0
 
     def __process_message(self, client, message: Protocol, is_receiving=False):
@@ -71,9 +72,12 @@ class Server:
             CLI.message_caution("GOT EMPTY MESSAGE", print_func=self.__print_thread)
             return False
 
-        if message == Protocols.DISCONNECT:
-            self.disconnect_client(client)
-            return True
+        # if message == Protocols.DISCONNECT:
+        #     self.disconnect_client(client)
+        #     return True
+
+        if message == ProtocolMethod.EXIT:
+            return self.disconnect_client(client, state=message.state)
 
         if message == Protocols.SHOW:
             self.show_clients()
@@ -181,41 +185,63 @@ class Server:
                         self.__threads[-1].start()
 
     def __initialize_client(self, client):
+        CLI.message_ok(
+            f"ININT",
+            print_func=self.__print_thread,
+        )
+
         if len(self.__clients) == self.max_clients:
-            CLI.message_error(
-                "MAX CLIENTS CONNECTED", print_func=self.__print_thread
-            )
+            CLI.message_error("MAX CLIENTS CONNECTED", print_func=self.__print_thread)
             client.close()
             return None
 
-        self.__send_data(client, Protocols.INITIALIZE)
+        init = Protocol(
+            id="Server", method=ProtocolMethod.INIT, state=ProtocolState.REQ_AWK
+        )
+
+        client_node = self.pop_config(client)
+        init.content = json.dumps(self.__config_last_entry)
+        self.__send_data(client, init)
 
         while not self.__is_active(client):
             pass
 
         response = self.__receive_data(client)
-        if response == Protocols.DISCONNECT:
+
+        if response == ProtocolMethod.EXIT:
             client.shutdown(0)
             client.close()
+            CLI.message_error("CLIENT DISCONNECTED", print_func=self.__print_thread)
             return
+        elif response == ProtocolMethod.INIT:
+            if response.state != ProtocolState.AWK:
+                CLI.message_error("NEVER GOT AWK", print_func=self.__print_thread)
+                self.__config_content_queue.insert(0, self.__config_last_entry)
+                return None
 
-        # TODO: Implement AWK
-        self.__send_data(client, Protocols.INITIALIZE)
-
-        client_node = self.pop_config(client)
+        init.state = ProtocolState.SUCCESS
+        init.content = ""
         self.__clients.append(client_node)
+
+        self.__send_data(client, init)
+
         CLI.line()
         CLI.message_ok(
             f"CLIENT CONNECTED: {str(client_node.network_string)}",
             print_func=self.__print_thread,
         )
+        self.show_client(client_node.ID)
 
         return client_node
 
     def send(self, client, message: Protocol):
         self.__send_data(client, message)
 
-    def __send_data(self, client, message: Protocol, encoding="ascii"):
+    def __send_data(
+        self, client, message: Protocol, sign: bool = True, encoding="ascii"
+    ):
+        if sign and type(client) is Node:
+            message["ID"] = "Server"
         addr = (
             CLI.color("aquamarine", client.network_string)
             if type(client) is Node
@@ -242,9 +268,11 @@ class Server:
         self.__log_receive(message, addr)
         return message
 
-    def __init_config(self, file_path = None, schema_path = None):
+    def __init_config(self, file_path=None, schema_path=None):
         try:
-            with open(self.config_schema_path if schema_path is None else schema_path, 'r') as f:
+            with open(
+                self.config_schema_path if schema_path is None else schema_path, "r"
+            ) as f:
                 schema = json.load(f)
         except FileNotFoundError:
             print(f"The file '{schema_path}' does not exist.")
@@ -252,56 +280,83 @@ class Server:
             print(f"The file could not be parsed as JSON.")
 
         try:
-            with open(self.config_path if file_path is None else file_path, 'r') as f:
+            with open(self.config_path if file_path is None else file_path, "r") as f:
                 data = json.load(f)
                 jsonschema.validate(instance=data, schema=schema)
-                self.__config_content = list(data['Nodes'])
+                self.__config_content = list(data["Nodes"])
+                self.__config_content_queue = list(data["Nodes"])
                 self.max_clients = len(self.__config_content)
         except FileNotFoundError:
             print(f"The file '{file_path}' does not exist.")
         except json.JSONDecodeError:
             print(f"The file could not be parsed as JSON.")
         except jsonschema.exceptions.ValidationError:
-            print(f"The file '{file_path}' does not adhere to the configuration schema defined in {schema_path}.")
+            print(
+                f"The file '{file_path}' does not adhere to the configuration schema defined in {schema_path}."
+            )
 
-    def pop_config(self, socket:socket) -> Node:
+    def pop_config(self, socket: socket) -> Node:
         def default(data, key, default):
             return data[key] if key in data else default
 
-        if len(self.__config_content) > 0:
-            data = self.__config_content.pop(0)
-            return Node(socket, config_data = data)
+        if len(self.__config_content_queue) > 0:
+            data = self.__config_content_queue.pop(0)
+            self.__config_last_entry = data
+            return Node(socket, config_data=data)
         else:
             CLI.message_error("Config is empty")
             return None
-    
 
-    def get_client_by_tag(self, tag:str) -> Node:
+    def get_client_by_tag(self, tag: str) -> Node:
         for client in self.__clients:
             if tag in client.tags:
                 return client
         return None
 
-    def get_client_by_id(self, client_id:str) -> Node:
+    def get_client_by_id(self, client_id: str) -> Node:
         for client in self.__clients:
             if client.ID == client_id:
                 return client
         return None
 
-    def disconnect_client(self, client: Node):
+    def disconnect_client(self, client: Node, state: ProtocolState = ProtocolState.AWK):
+        if client not in self.__clients:
+            return
+
+        def show_message():
+            CLI.message_caution(
+                f"CLIENT DISCONNECTED: {str(client.network_string)}",
+                print_func=self.__print_thread,
+            )
+
         try:
-            self.__send_data(client.socket, Protocols.DISCONNECT)
-            client.close()
+            if state == ProtocolState.REQ_AWK:
+                # Logic before disconnecting the client goes here!
+                # Based on a CLIENT'S REQUEST to disconnect
+                with self.__locks["clients"]:
+                    self.__clients.remove(client)
+                    self.__send_data(
+                        client.socket,
+                        Protocol(method=ProtocolMethod.EXIT, state=ProtocolState.AWK),
+                    )
+                    show_message()
+                    client.close()
+
+            elif state == ProtocolState.DEFAULT:
+                # Logic before disconnecting the client goes here!
+                # Based on the SERVERS REQUEST to disconnect a client
+
+                pass
+
+            elif state == ProtocolState.AWK:
+                # Logic for when a client confirms it will disconnect
+                # due to the SERVER'S REQUEST
+                with self.__locks["clients"]:
+                    self.__clients.remove(client)
+                    show_message()
+                    client.close()
         except:
             pass
-
-        with self.__locks["clients"]:
-            self.__clients.remove(client)
-
-        CLI.message_caution(
-            f"CLIENT DISCONNECTED: {str(client.network_string)}",
-            print_func=self.__print_thread,
-        )
 
     def broadcast(self, message, exclude=None):
         if exclude and exclude in self.__clients and len(self.__clients) == 1:
@@ -313,24 +368,29 @@ class Server:
                         self.__send_data(client, message)
 
     def shutdown(self):
-        message = Protocols.DISCONNECT
-        message[ProtocolType] = ProtocolType.BROADCAST
-        message[Field.ID] = "Server"
+        message = Protocol(
+            protocol_type=ProtocolType.BROADCAST,
+            method=ProtocolMethod.EXIT,
+            state=ProtocolState.REQ_AWK,
+        )
 
         CLI.message_caution("STOPPING SERVER...", print_func=self.__print_thread)
         self.broadcast(message)
-        self.running = False
-        self.__exit_event.set()
         time.sleep(1)
+
         with self.__locks["clients"]:
             for client in self.__clients:
                 client.close()
+
+        self.running = False
+        self.__exit_event.set()
 
         with self.__locks["thread"]:
             for thread in self.__threads:
                 if thread.is_alive() and thread != threading.current_thread():
                     thread.join()
 
+        self.sock.shutdown(socket.SHUT_RDWR)
         self.sock.close()
         CLI.message_error("SERVER SHUTDOWN", print_func=self.__print_thread)
 
@@ -342,11 +402,10 @@ class Server:
         client_info = []
         for node in self.__clients:
             client_info.append(node.get_data())
-        data = [list(client_info[0].keys())] + [
-            list(entry.values()) for entry in client_info
-        ]
+        data = [list(entry.values()) for entry in client_info]
+        headers = ["Index"] + list(client_info[0].keys())
         self.__print_("Connected Clients")
-        CLI.table(data, showindex=True)
+        CLI.table(data, headers=headers, showindex=True)
 
     def show_client(self, client: int or str):
         if type(client) is str:
@@ -372,7 +431,8 @@ class Server:
         )
 
         CLI.message_caution(
-            f"Configured For MAX {len(self.__config_content)} clients.", print_func=self.__print_thread
+            f"Configured For MAX {len(self.__config_content)} clients.",
+            print_func=self.__print_thread,
         )
         self.sock.listen()
         self.__threads.extend(
@@ -381,7 +441,7 @@ class Server:
                 threading.Thread(target=self.__command_line),
             ]
         )
-        
+
         [thread.start() for thread in self.__threads]
         for thread in self.__threads:
             try:
@@ -402,16 +462,19 @@ class Server:
         self.__print_thread(results[0])
         self.__print_thread(results[1])
 
-
     def __log_send(self, message, addr):
         if LOG:
-            output = f"[LOG] {CLI.color('steelblue', 'SENDING:')}\n"
+            output = (
+                f"[LOG - {time.strftime('%X')}] {CLI.color('steelblue', 'SENDING:')}\n"
+            )
             output += f'{str(message):<{LOG_PADDING}} {"-->":<{LOG_PADDING}} {addr}\n'
             self.__print_thread(output, clr="gray")
 
     def __log_receive(self, message, addr):
         if LOG:
-            output = f"[LOG] {CLI.color('tomato', 'RECEIVED:')}\n"
+            output = (
+                f"[LOG - {time.strftime('%X')}] {CLI.color('tomato', 'RECEIVED:')}\n"
+            )
             output += f'{str(message):<{LOG_PADDING}} {"<--":<{LOG_PADDING}} {addr}\n'
             self.__print_thread(output, clr="gray")
 
@@ -433,14 +496,14 @@ class Server:
         )
 
     def __is_active(self, stream, timeout=1):
-
         if type(stream) is socket.socket:
             ready, _, _ = select.select([stream], [], [], timeout)
             return ready
         else:
-            if os.name == 'nt':  # for Windows
+            if os.name == "nt":  # for Windows
                 import msvcrt
                 import time
+
                 start_time = time.time()
                 while True:
                     if msvcrt.kbhit():  # keypress is waiting, return True
@@ -450,6 +513,7 @@ class Server:
             else:  # for Unix/Linux/MacOS/BSD/etc
                 ready, _, _ = select.select([stream], [], [], timeout)
                 return bool(ready)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

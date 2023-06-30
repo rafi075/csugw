@@ -9,7 +9,9 @@ from node import Node
 class ProtocolState(Enum):
     DEFAULT = "DEFAULT"
     FAIL = "FAIL"
-    CONFIRM = "CONFIRM"
+    SUCCESS = "SUCCESS"
+    REQ_AWK = "REQ_AWK"
+    AWK = "AWK"
 
 
 class ProtocolType(Enum):
@@ -22,9 +24,11 @@ class ProtocolMethod(Enum):
     INIT = "INIT"
     EXIT = "EXIT"
     SHOW = "SHOW"
-
+    COMMAND = "COMMAND"
+    SCRIPT = "SCRIPT"
 
     DEMO = "DEMO"
+
 
 
 class Field(Enum):
@@ -95,7 +99,7 @@ class Protocol:
             Field.ID: self.id,
             Field.METHOD: self.method.value,
             Field.BODY: self.content,
-            Field.STATE: ProtocolState.DEFAULT.value,
+            Field.STATE: self.state.value,
         }
 
     def _populate_from_json(self, json_data):
@@ -138,11 +142,16 @@ class Protocol:
         content_size = len(self[Field.BODY])
         method_size = len(self[Field.METHOD])
 
+
+        b1 = self._validate_enum(self.method, ProtocolMethod) == self.method
+        b2 = self._validate_enum(self.protocol_type, ProtocolType) == self.protocol_type
+        b3 = self._validate_enum(self.state, ProtocolState) == self.state
+
         broadcast_requires_body = (
             self[Field.TYPE] == ProtocolType.BROADCAST.value
             and len(self[Field.BODY]) > 0
         )
-        return broadcast_requires_body or self[Field.TYPE] == ProtocolType.DIRECT.value
+        return b1 and b2 and b3
 
     # Returns True if some string command matches the command for this object
     def __eq__(self, __value: object) -> bool:
@@ -173,12 +182,11 @@ class Protocol:
         except:
             return False
 
-
 class Protocols:
     INITIALIZE = Protocol(
         method=ProtocolMethod.INIT,
         state=ProtocolState.DEFAULT,
-        content="Initialize",
+        content="INIT",
     )
 
     DISCONNECT = Protocol(

@@ -90,6 +90,7 @@ class Node:
         return _data
 
     def close(self) -> None:
+        self.socket.shutdown(socket.SHUT_RDWR)
         self.socket.close()
 
     def send(self, data: str, encoding="ascii") -> None:
