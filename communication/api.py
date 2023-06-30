@@ -48,12 +48,22 @@ class API:
             str:                The output of the executed CLI program.
         """
         # Command to execute
-        command = [executable, path] + list(args)
+        if executable:
+            command = [executable, path] + list(args)
+        else:
+            command = [path] + list(args)
 
-        # Run command, capturing STDOUT and STDERR with subprocess.PIPE
-        process = subprocess.run(
-            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-        )
+        try:
+            # Run command, capturing STDOUT and STDERR with subprocess.PIPE
+            process = subprocess.run(
+                command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+            )
+        except subprocess.CalledProcessError as e:
+            # print(e.stdout)
+            # print(e.stderr)
+            return "FAIL"
+        except:
+            return "EXEC ERROR"
 
         if process.returncode != 0:
             return f"EXEC ERROR: {process.stderr}"
@@ -106,7 +116,7 @@ class API:
         Returns:
             str:                The output of the executed CLI program.
         """
-        return API.execute("bash", path, *args)
+        return API.execute("", path, *args)
     
     @staticmethod
     def exe_sh(path: str = "", *args) -> str:

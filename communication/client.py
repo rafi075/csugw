@@ -10,7 +10,7 @@ import threading
 from random import randrange
 import time
 import traceback
-import api as API
+from api import API
 import jsonschema
 
 import lib_cli as CLI
@@ -288,6 +288,21 @@ class Client:
 
     def display_network(self):
         CLI.message_ok(self.__get_socket_address(self.sock))
+
+    def os_set_IP(self, ip: str, interface:str = "ens33"):
+        output = API.exe_bash("/root/scripts/set_ip", ip, interface)
+        print(output)
+        return output
+
+    def run_script(self, command: str, *args):
+        output = API.exe_bash(f"/root/scripts/{command}", *args)
+        print(output)
+        return output
+    
+    def run_command(self, command: str, *args):
+        output = API.exe_bash(f"{command}", *args)
+        print(output)
+        return output
 
 
 
