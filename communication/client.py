@@ -290,13 +290,19 @@ class Client:
         CLI.message_ok(self.__get_socket_address(self.sock))
 
     def os_set_IP(self, ip: str, interface:str = "ens33"):
-        return API.exe_bash("/root/scripts/set_ip", ip, interface)
+        output = API.exe_bash("/root/scripts/set_ip", ip, interface)
+        print(output)
+        return output
 
     def run_script(self, command: str, *args):
-        return API.exe_bash(f"/root/scripts/{command}", *args)
+        output = API.exe_bash(f"/root/scripts/{command}", *args)
+        print(output)
+        return output
     
     def run_command(self, command: str, *args):
-        return API.exe_bash(f"{command}", *args)
+        output = API.exe_bash(f"{command}", *args)
+        print(output)
+        return output
 
 
 
