@@ -107,11 +107,9 @@ class Server:
                         continue
                     if Protocol.has_key(message, ProtocolMethod):
                         message = Protocol(method=message)
-                        # self.broadcast(message)
                         for client in self.__clients:
                             self.__process_message(client, message, is_receiving=False)
-                        # if self.__process_message(message, is_receiving=False):
-                        # break
+
             except KeyboardInterrupt:
                 break
             except ValueError:
@@ -156,8 +154,7 @@ class Server:
     def __handle_client(self, client: Node):
         while not self.__exit_event.is_set():
             try:
-                ready_to_read, _, _ = select.select([client.socket], [], [], 1)
-                if ready_to_read:
+                if self.__is_active(client.socket):
                     message = self.__receive_data(client.socket)
                     if self.__process_message(client, message, is_receiving=True):
                         break
@@ -169,7 +166,6 @@ class Server:
     def __receive(self):
         self.sock.setblocking(False)
         while not self.__exit_event.is_set():
-            # ready_to_read, _, _ = select.select([self.sock], [], [], 1)
             if self.__is_active(self.sock):
                 client, address = self.sock.accept()
                 with self.__locks["clients"]:
