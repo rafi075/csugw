@@ -19,34 +19,6 @@ def program_arguments():
     return parser.parse_args()
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def custom_logic(obj: Client, client: Node, message: Protocol or str):
     global bDoubled
     CLI.message_ok("CUSTOM LOGIC", colr="BlueViolet")
@@ -69,8 +41,6 @@ def custom_logic(obj: Client, client: Node, message: Protocol or str):
         bDoubled = True
 
     return False
-
-
 
 
 args = program_arguments()
