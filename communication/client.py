@@ -361,3 +361,24 @@ if __name__ == "__main__":
     client = Client(client_id, host=args.IPv4Address, port=args.Port)
     client.run()
     exit(0)
+
+
+
+
+
+
+
+"""
+TODO:
+- Durning INIT
+    - first connection will have default ip, lets say 10.1.1.250
+    - we need to 
+        - pop config ip
+        - send config ip to client
+        - client call OS level script to reconfigure network
+            - assume client will DC here
+                - if so, need to assess how server will handle reconnection
+                - + error cases? ()
+
+
+"""
