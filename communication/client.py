@@ -59,8 +59,8 @@ class Client:
         self.__selector_sock = selectors.DefaultSelector()
         self.__selector_input = selectors.DefaultSelector()
 
-        connected = False
         wait_time = 5
+        connected = False
         while not connected:
             try:
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -218,12 +218,13 @@ class Client:
     def send(self, message: Protocol, sign: bool = True, encoding: str = "ascii"):
         self.__send_data(message, sign=sign)
 
+
+    # Duel OS Implementation
     def __is_active(self, stream, timeout=1):
         if os.name == "nt":  # for Windows
             if type(stream) is socket.socket:
                 ready, _, _ = select.select([stream], [], [], timeout)
                 return ready
-
             import msvcrt
             import time
 
@@ -323,7 +324,7 @@ class Client:
 
 
     # TODO:
-    # Terminate socket connection
+    # Terminate socket connection (maybe?)
     # reconfigure OS network interface
     # Re-establish socket connection to server
     def os_set_IP(self, ip: str, interface: str = "ens33"):
@@ -396,15 +397,14 @@ if __name__ == "__main__":
 """
 TODO:
 - Durning INIT
-    - first connection will have default ip, lets say 10.1.1.250
+    - first connection will have default ip, lets say 10.1.1.250                                done
     - we need to 
-        - pop config ip
-        - send config ip to client
-        - client call OS level script to reconfigure network
-            - assume client will DC here
-                - if so, need to assess how server will handle reconnection
-                - + error cases? (user error: multiple connections)
+        - pop config ip                                                                         done
+        - send config ip to client                                                              done
+        - client call OS level script to reconfigure network                                    done
+            - assume client will DC here                                                        * talk with Rakibul
+                - if so, need to assess how server will handle reconnection                     *
+                - + error cases? (user error: multiple connections)                             *               
 
-
-
+        - reconnect to server                                                                   *          
 """
