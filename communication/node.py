@@ -4,7 +4,7 @@ import socket
 import jsonschema
 from lib_cli import print_array, table, message
 
-DEFAULT_IP = "10.1.2.1"
+DEFAULT_IP = "10.1.1.150"
 DEFAULT_PORT = 5000
 DEFAULT_GATEWAY = "10.1.1.1"
 
