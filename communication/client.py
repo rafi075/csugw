@@ -59,8 +59,8 @@ class Client:
         self.__selector_sock = selectors.DefaultSelector()
         self.__selector_input = selectors.DefaultSelector()
 
-        connected = False
         wait_time = 5
+        connected = False
         while not connected:
             try:
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -104,8 +104,6 @@ class Client:
 
         if message == ProtocolMethod.EXIT:
             return self.disconnect(state = message.state)
-
-
             
         if self.custom_logic is not None:
             return self.custom_logic(self, self.sock, message)
@@ -220,20 +218,21 @@ class Client:
     def send(self, message: Protocol, sign: bool = True, encoding: str = "ascii"):
         self.__send_data(message, sign=sign)
 
+
+    # Duel OS Implementation
     def __is_active(self, stream, timeout=1):
         if os.name == "nt":  # for Windows
             if type(stream) is socket.socket:
                 ready, _, _ = select.select([stream], [], [], timeout)
                 return ready
-
             import msvcrt
             import time
 
             start_time = time.time()
             while True:
-                if msvcrt.kbhit():  # keypress is waiting, return True
+                if msvcrt.kbhit():
                     return True
-                if time.time() - start_time > timeout:  # timeout
+                if time.time() - start_time > timeout: 
                     return False
         else:  # for Unix/Linux/MacOS/BSD/etc
             ready, _, _ = select.select([sys.stdin], [], [], timeout)
@@ -324,7 +323,8 @@ class Client:
         CLI.message_ok(self.__get_socket_address(self.sock))
 
 
-    # Terminate socket connection
+    # TODO:
+    # Terminate socket connection (maybe?)
     # reconfigure OS network interface
     # Re-establish socket connection to server
     def os_set_IP(self, ip: str, interface: str = "ens33"):
@@ -397,15 +397,14 @@ if __name__ == "__main__":
 """
 TODO:
 - Durning INIT
-    - first connection will have default ip, lets say 10.1.1.250
+    - first connection will have default ip, lets say 10.1.1.250                                done
     - we need to 
-        - pop config ip
-        - send config ip to client
-        - client call OS level script to reconfigure network
-            - assume client will DC here
-                - if so, need to assess how server will handle reconnection
-                - + error cases? (user error: multiple connections)
+        - pop config ip                                                                         done
+        - send config ip to client                                                              done
+        - client call OS level script to reconfigure network                                    done
+            - assume client will DC here                                                        * talk with Rakibul
+                - if so, need to assess how server will handle reconnection                     *
+                - + error cases? (user error: multiple connections)                             *               
 
-
-
+        - reconnect to server                                                                   *          
 """

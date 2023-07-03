@@ -28,9 +28,7 @@ LOG_PADDING = 0
 LOG = True
 
 
-# DONE: parse config file
-# DONE: get_client_by_id, get_clients_by_tag
-#
+
 # TODO: initialize clients based on config
 #       discuss whether the program should block until all clients are initialized?
 
@@ -72,10 +70,6 @@ class Server:
             CLI.message_caution("GOT EMPTY MESSAGE", print_func=self.__print_thread)
             return False
 
-        # if message == Protocols.DISCONNECT:
-        #     self.disconnect_client(client)
-        #     return True
-
         if message == ProtocolMethod.EXIT:
             return self.disconnect_client(client, state=message.state)
 
@@ -95,7 +89,7 @@ class Server:
         return False
 
     def __command_line(self):
-        from cli_commands import CLI_DEFAULT_COMMANDS, CLI_SERVER_COMMANDS
+        from cli_commands import CLI_SERVER_COMMANDS
 
         self.custom_commands = self.custom_commands + CLI_SERVER_COMMANDS
 
@@ -164,6 +158,7 @@ class Server:
                         break
             except Exception as e:
                 # TODO: Exception thrown on DC
+                # Perhaps handle it more gracefully
                 self.disconnect_client(client)
                 break
 
@@ -390,6 +385,7 @@ class Server:
                 if thread.is_alive() and thread != threading.current_thread():
                     thread.join()
 
+
         self.sock.shutdown(socket.SHUT_RDWR)
         self.sock.close()
         CLI.message_error("SERVER SHUTDOWN", print_func=self.__print_thread)
@@ -506,9 +502,9 @@ class Server:
 
                 start_time = time.time()
                 while True:
-                    if msvcrt.kbhit():  # keypress is waiting, return True
+                    if msvcrt.kbhit():
                         return True
-                    if time.time() - start_time > timeout:  # timeout
+                    if time.time() - start_time > timeout:
                         return False
             else:  # for Unix/Linux/MacOS/BSD/etc
                 ready, _, _ = select.select([stream], [], [], timeout)
