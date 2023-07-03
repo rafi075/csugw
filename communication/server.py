@@ -390,6 +390,7 @@ class Server:
                 if thread.is_alive() and thread != threading.current_thread():
                     thread.join()
 
+
         self.sock.shutdown(socket.SHUT_RDWR)
         self.sock.close()
         CLI.message_error("SERVER SHUTDOWN", print_func=self.__print_thread)
@@ -506,9 +507,9 @@ class Server:
 
                 start_time = time.time()
                 while True:
-                    if msvcrt.kbhit():  # keypress is waiting, return True
+                    if msvcrt.kbhit():
                         return True
-                    if time.time() - start_time > timeout:  # timeout
+                    if time.time() - start_time > timeout:
                         return False
             else:  # for Unix/Linux/MacOS/BSD/etc
                 ready, _, _ = select.select([stream], [], [], timeout)

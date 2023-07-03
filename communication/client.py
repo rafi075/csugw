@@ -104,8 +104,6 @@ class Client:
 
         if message == ProtocolMethod.EXIT:
             return self.disconnect(state = message.state)
-
-
             
         if self.custom_logic is not None:
             return self.custom_logic(self, self.sock, message)
@@ -231,9 +229,9 @@ class Client:
 
             start_time = time.time()
             while True:
-                if msvcrt.kbhit():  # keypress is waiting, return True
+                if msvcrt.kbhit():
                     return True
-                if time.time() - start_time > timeout:  # timeout
+                if time.time() - start_time > timeout: 
                     return False
         else:  # for Unix/Linux/MacOS/BSD/etc
             ready, _, _ = select.select([sys.stdin], [], [], timeout)
@@ -324,6 +322,7 @@ class Client:
         CLI.message_ok(self.__get_socket_address(self.sock))
 
 
+    # TODO:
     # Terminate socket connection
     # reconfigure OS network interface
     # Re-establish socket connection to server
