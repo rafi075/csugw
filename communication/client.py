@@ -50,6 +50,7 @@ class Client:
         self.initialized = False
         self.sock = None
         self.port = port
+        self.host = host
 
         self.custom_logic = custom_logic
         self.custom_commands = [] if custom_commands is None else custom_commands
@@ -330,7 +331,24 @@ class Client:
         self.sock.close()
         output = API.exe_bash("/root/scripts/set_ip", ip, interface)
         time.sleep(0.5)
-        self.sock.connect((ip, self.port))
+        # self.sock.connect((ip, self.port))
+
+
+        connected = False
+        wait_time = 1
+        while not connected:
+            try:
+                self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.sock.settimeout(1.0)
+                self.sock.connect((self.host, self.port))
+                connected = True
+            except socket.error as err:
+                CLI.message_caution(
+                    f"Unable to resolve IP address, retrying in {wait_time} second(s)...",
+                    print_func=self.__print_thread,
+                )
+                time.sleep(wait_time)
+
         print(output)
         return output
 
