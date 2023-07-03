@@ -28,7 +28,7 @@ class Node:
         
         if config_data is not None:
             self.ID = config_data["ID"]
-            self.IP = ip.IPv4Address(str(config_data["IP"]))
+            self.IP = ip.IPv4Address(str(peerName[0]))
             self.PORT = default(config_data, "PORT", int(peerName[1]))
 
             if "." in str(config_data["SUBNET_MASK"]):
