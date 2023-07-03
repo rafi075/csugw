@@ -32,6 +32,12 @@ CLI_CLIENT_COMMANDS = [
         "Parameters": 1,
     },
     {
+        "Commands": ["ip", "reconfig"],
+        "Description": "",
+        "Function": "os_set_IP",
+        "Parameters": 1,
+    },
+    {
         "Commands": ["command", "./"],
         "Description": "Executes a bash command",
         "Function": "run_command",

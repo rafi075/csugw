@@ -49,6 +49,7 @@ class Client:
         self.__exit_event = threading.Event()
         self.initialized = False
         self.sock = None
+        self.port = port
 
         self.custom_logic = custom_logic
         self.custom_commands = [] if custom_commands is None else custom_commands
@@ -321,8 +322,15 @@ class Client:
     def display_network(self):
         CLI.message_ok(self.__get_socket_address(self.sock))
 
+
+    # Terminate socket connection
+    # reconfigure OS network interface
+    # Re-establish socket connection to server
     def os_set_IP(self, ip: str, interface: str = "ens33"):
+        self.sock.close()
         output = API.exe_bash("/root/scripts/set_ip", ip, interface)
+        time.sleep(0.5)
+        self.sock.connect((ip, self.port))
         print(output)
         return output
 
@@ -361,3 +369,25 @@ if __name__ == "__main__":
     client = Client(client_id, host=args.IPv4Address, port=args.Port)
     client.run()
     exit(0)
+
+
+
+
+
+
+
+"""
+TODO:
+- Durning INIT
+    - first connection will have default ip, lets say 10.1.1.250
+    - we need to 
+        - pop config ip
+        - send config ip to client
+        - client call OS level script to reconfigure network
+            - assume client will DC here
+                - if so, need to assess how server will handle reconnection
+                - + error cases? (user error: multiple connections)
+
+
+
+"""

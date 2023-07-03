@@ -6,6 +6,7 @@ import jsonschema
 from node import Node
 
 
+# Possibly add  and 'await' msg
 class ProtocolState(Enum):
     DEFAULT = "DEFAULT"
     FAIL = "FAIL"
