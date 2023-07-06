@@ -93,12 +93,10 @@ class Client:
                 return True
 
         if message == ProtocolMethod.COMMAND:
-            # msg = message.content.split(" ")
             self.run_command(*message.content.split(" "))
             return False
 
         if message == ProtocolMethod.SCRIPT:
-            # msg = message.content.split(" ")
             self.run_script(*message.content.split(" "))
             return False
 
@@ -401,6 +399,7 @@ TODO:
     - we need to 
         - pop config ip                                                                         done
         - send config ip to client                                                              done
+        - close socket connection                                                               done
         - client call OS level script to reconfigure network                                    done
             - assume client will DC here                                                        * talk with Rakibul
                 - if so, need to assess how server will handle reconnection                     *

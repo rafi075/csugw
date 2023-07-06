@@ -76,6 +76,10 @@ class Server:
         if message == Protocols.SHOW:
             self.show_clients()
             return False
+        
+        if message == ProtocolMethod.COMMAND:
+            self.__send_data(client, message)
+            return False
 
         if self.custom_logic is not None:
             return self.custom_logic(self, client, message)
@@ -98,13 +102,14 @@ class Server:
                 if self.__is_active(sys.stdin):
                     message = input()
                     result = self.__commands(message)
-                    if result is False:
-                        continue
+                    message_parts = message.split(" ")
+                    # if result is False:
+                    #     continue
                     if result == "VOID":
                         print("Invalid METHOD:\t", f'"{message}"\n')
                         continue
-                    if Protocol.has_key(message, ProtocolMethod):
-                        message = Protocol(method=message)
+                    if Protocol.has_key(message_parts[0], ProtocolMethod):
+                        message = Protocol(method=message_parts[0], content=" ".join(message_parts[1:]))
                         for client in self.__clients:
                             self.__process_message(client, message, is_receiving=False)
 
