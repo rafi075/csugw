@@ -326,10 +326,6 @@ class Client:
     # reconfigure OS network interface
     # Re-establish socket connection to server
     def os_set_IP(self, ip: str, interface: str = "ens33", gateway: str = "10.1.1.100", dns: str = "10.1.1.1"):
-        # self.sock.close()
-        # output = API.exe_bash("/root/scripts/set_ip", ip, interface)
-        # time.sleep(0.5)
-        # self.sock.connect((ip, self.port))
 
         config = f"""
         [Match]
@@ -339,6 +335,7 @@ class Client:
         Address={ip}/24
         Gateway={gateway}
         DNS={dns}
+
         """
 
         # open a file at /root/configuration/ens33.conf and replace all lines with the config variable
@@ -347,28 +344,11 @@ class Client:
 
         self.disconnect(state=ProtocolState.AWK)
         self.run_command("reboot")
-        # connected = False
-        # wait_time = 1
-        # while not connected:
-        #     try:
-        #         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #         self.sock.settimeout(1.0)
-        #         self.sock.connect((self.host, self.port))
-        #         connected = True
-        #     except socket.error as err:
-        #         CLI.message_caution(
-        #             f"Unable to resolve IP address, retrying in {wait_time} second(s)...",
-        #             print_func=self.__print_thread,
-        #         )
-        #         time.sleep(wait_time)
 
-        # print(output)
-        # return output
 
     def run_script(self, command: str, *args):
         prefix = "./" if command[0] != "/" else ""
         output = API.exe_bash(f"{prefix}{command}", *args)
-        # output = API.exe_bash(f"/root/scripts/{command}", *args)
         print(output)
         return output
 

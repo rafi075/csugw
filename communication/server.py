@@ -41,7 +41,7 @@ class Server:
         self.port = port
         self.__config_content = []
         self.__config_content_queue = []
-        self.__config_last_entry = -1
+        self.__config_last_entry = None
         self.__clients = []
         self.__threads = []
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -64,6 +64,7 @@ class Server:
         self.config_path = os.path.join(self.dir_path, "config.json")
         self.config_schema_path = os.path.join(self.dir_path, "config_schema.json")
         self.max_clients = 0
+        self.awaiting_connection = None
 
     def __process_message(self, client, message: Protocol, is_receiving=False):
         if not message:
@@ -173,8 +174,12 @@ class Server:
             if self.__is_active(self.sock):
                 client, address = self.sock.accept()
                 with self.__locks["clients"]:
-                    if address not in self.__clients:
+                    if self.awaiting_connection is not None and str(address) == str(self.awaiting_connection.IP):
+                        client_node = self.__initialize_client(client, configured_reconnect = True)
+                    elif address not in self.__clients:
                         client_node = self.__initialize_client(client)
+
+                # Handle client thread
                 if client_node is not None:
                     with self.__locks["thread"]:
                         self.__threads.append(
@@ -184,24 +189,49 @@ class Server:
                         )
                         self.__threads[-1].start()
 
-    def __initialize_client(self, client):
-        CLI.message_ok(
-            f"ININT",
-            print_func=self.__print_thread,
+    def __initialize_client(self, client:socket.socket, configured_reconnect = False):
+
+        init = Protocol(
+            id="Server", method=ProtocolMethod.INIT, state=ProtocolState.REQ_AWK
         )
+
+        # Check if client is returning from configuration reboot
+        if self.awaiting_connection is not None:
+            # get ip address from socket named client
+            client_ip = str(client.getpeername()[0])
+            if client_ip == str(self.awaiting_connection.IP):
+                self.awaiting_connection = None
+                client_node = Node(client, config_data=self.__config_last_entry)
+                self.__clients.append(client_node)
+
+                init.state = ProtocolState.SUCCESS
+                init.content = ""
+                self.__send_data(client, init)
+
+                CLI.message_ok(
+                    f"CLIENT CONNECTED: {str(client_node.network_string)}",
+                    print_func=self.__print_thread,
+                )
+                return client_node
+            else:
+                CLI.message_error("EITHER CLIENT FAILED TO CONFIG OR MULTIPLE CLIENTS STARTED", print_func=self.__print_thread)
+
+
 
         if len(self.__clients) == self.max_clients:
             CLI.message_error("MAX CLIENTS CONNECTED", print_func=self.__print_thread)
             client.close()
             return None
 
-        init = Protocol(
-            id="Server", method=ProtocolMethod.INIT, state=ProtocolState.REQ_AWK
-        )
+
+
+        if self.__config_last_entry is not None:
+            self.send()
 
         client_node = self.pop_config(client)
         init.content = json.dumps(self.__config_last_entry)
         self.__send_data(client, init)
+        self.awaiting_connection = client_node
 
         while not self.__is_active(client):
             pass
@@ -221,18 +251,24 @@ class Server:
 
         init.state = ProtocolState.SUCCESS
         init.content = ""
-        self.__clients.append(client_node)
+
+        # self.__clients.append(client_node)
 
         self.__send_data(client, init)
 
         CLI.line()
-        CLI.message_ok(
-            f"CLIENT CONNECTED: {str(client_node.network_string)}",
+        # CLI.message_ok(
+        #     f"CLIENT CONNECTED: {str(client_node.network_string)}",
+        #     print_func=self.__print_thread,
+        # )
+
+        CLI.message_caution(
+            f"CLIENT CONFIGURING",
             print_func=self.__print_thread,
         )
-        self.show_client(client_node.ID)
+        # self.show_client(client_node.ID)
 
-        return client_node
+        return None
 
     def send(self, client, message: Protocol):
         self.__send_data(client, message)
