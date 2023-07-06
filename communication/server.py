@@ -244,7 +244,7 @@ class Server:
                 self.__config_content_queue.insert(0, self.__config_last_entry)
                 return None
 
-        init.state = ProtocolState.SUCCESS
+        init.state = ProtocolState.FAIL
         init.content = ""
 
         # self.__clients.append(client_node)
