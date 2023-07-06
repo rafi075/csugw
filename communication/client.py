@@ -325,30 +325,45 @@ class Client:
     # Terminate socket connection (maybe?)
     # reconfigure OS network interface
     # Re-establish socket connection to server
-    def os_set_IP(self, ip: str, interface: str = "ens33"):
-        self.sock.close()
-        output = API.exe_bash("/root/scripts/set_ip", ip, interface)
-        time.sleep(0.5)
+    def os_set_IP(self, ip: str, interface: str = "ens33", gateway: str = "10.1.1.100", dns: str = "10.1.1.1"):
+        # self.sock.close()
+        # output = API.exe_bash("/root/scripts/set_ip", ip, interface)
+        # time.sleep(0.5)
         # self.sock.connect((ip, self.port))
 
+        config = f"""
+        [Match]
+        Name={interface}
 
-        connected = False
-        wait_time = 1
-        while not connected:
-            try:
-                self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.sock.settimeout(1.0)
-                self.sock.connect((self.host, self.port))
-                connected = True
-            except socket.error as err:
-                CLI.message_caution(
-                    f"Unable to resolve IP address, retrying in {wait_time} second(s)...",
-                    print_func=self.__print_thread,
-                )
-                time.sleep(wait_time)
+        [Network]
+        Address={ip}/24
+        Gateway={gateway}
+        DNS={dns}
+        """
 
-        print(output)
-        return output
+        # open a file at /root/configuration/ens33.conf and replace all lines with the config variable
+        with open(f"/root/configuration/{interface}.conf", "w") as f:
+            f.write(config)
+
+        self.disconnect(state=ProtocolState.AWK)
+        self.run_command("reboot")
+        # connected = False
+        # wait_time = 1
+        # while not connected:
+        #     try:
+        #         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #         self.sock.settimeout(1.0)
+        #         self.sock.connect((self.host, self.port))
+        #         connected = True
+        #     except socket.error as err:
+        #         CLI.message_caution(
+        #             f"Unable to resolve IP address, retrying in {wait_time} second(s)...",
+        #             print_func=self.__print_thread,
+        #         )
+        #         time.sleep(wait_time)
+
+        # print(output)
+        # return output
 
     def run_script(self, command: str, *args):
         prefix = "./" if command[0] != "/" else ""
