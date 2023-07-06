@@ -174,9 +174,7 @@ class Server:
             if self.__is_active(self.sock):
                 client, address = self.sock.accept()
                 with self.__locks["clients"]:
-                    if self.awaiting_connection is not None and str(address) == str(self.awaiting_connection.IP):
-                        client_node = self.__initialize_client(client, configured_reconnect = True)
-                    elif address not in self.__clients:
+                    if address not in self.__clients:
                         client_node = self.__initialize_client(client)
 
                 # Handle client thread
@@ -189,7 +187,7 @@ class Server:
                         )
                         self.__threads[-1].start()
 
-    def __initialize_client(self, client:socket.socket, configured_reconnect = False):
+    def __initialize_client(self, client:socket.socket):
 
         init = Protocol(
             id="Server", method=ProtocolMethod.INIT, state=ProtocolState.REQ_AWK
@@ -225,9 +223,6 @@ class Server:
 
 
 
-        if self.__config_last_entry is not None:
-            self.send()
-
         client_node = self.pop_config(client)
         init.content = json.dumps(self.__config_last_entry)
         self.__send_data(client, init)
@@ -242,7 +237,7 @@ class Server:
             client.shutdown(0)
             client.close()
             CLI.message_error("CLIENT DISCONNECTED", print_func=self.__print_thread)
-            return
+            return None
         elif response == ProtocolMethod.INIT:
             if response.state != ProtocolState.AWK:
                 CLI.message_error("NEVER GOT AWK", print_func=self.__print_thread)
