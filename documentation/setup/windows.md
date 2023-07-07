@@ -25,7 +25,15 @@
   - [GNS3 Virtual Machine](https://gns3.com/software/download-vm), can also be installed by GNS3 installer
 - [VMware Workstation 17 Pro](https://www.vmware.com/products/workstation-pro/workstation-pro-evaluation.html)
   - Version: `17.0.0 build-20800274`
-
+  - Product Keys
+    ```
+    MC60H-DWHD5-H80U9-6V85M-8280D
+    4A4RR-813DK-M81A9-4U35H-06KND
+    NZ4RR-FTK5H-H81C1-Q30QH-1V2LA
+    JU090-6039P-08409-8J0QH-2YR7F
+    4Y09U-AJK97-089Z0-A3054-83KLA
+    4C21U-2KK9Q-M8130-4V2QH-CF810
+    ```
 
 ## Host Configuration
 Configuration of the Windows Host machine
