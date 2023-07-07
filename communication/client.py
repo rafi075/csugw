@@ -90,7 +90,7 @@ class Client:
                 return False
             else:
                 # CLI.message_error("INIT FAILED", print_func=self.__print_thread)
-                self.os_set_IP(ip = str(self.node.ip))
+                self.os_set_IP(ip = str(self.node.IP))
                 return False
 
         if message == ProtocolMethod.COMMAND:
