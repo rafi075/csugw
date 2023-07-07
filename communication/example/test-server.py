@@ -5,7 +5,7 @@ from server import Server
 import lib_cli as CLI
 from protocol import *
 
-IP_ADDRESS = "10.1.1.10"
+DEFAULT_GATEWAY = "10.1.1.1"
 bDoubled = False
 def program_arguments():
     parser = argparse.ArgumentParser(
@@ -15,7 +15,7 @@ def program_arguments():
         "-ip",
         "--IPv4Address",
         type=str,
-        default=IP_ADDRESS,
+        default=DEFAULT_GATEWAY,
         help="An IPv4 address in the format xxx.xxx.xxx.xxx",
     )
     parser.add_argument("-p", "--Port", type=int, default=5000, help="A port number")

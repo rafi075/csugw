@@ -6,14 +6,14 @@ import lib_cli as CLI
 from protocol import *
 from attack import attack_lib
 
-IP_ADDRESS = "10.1.1.10"
+DEFAULT_GATEWAY = "10.1.1.1"
 
 bDoubled = False
 def program_arguments():
     parser = argparse.ArgumentParser(
         description="This is a program that accepts IP address and Port number"
     )
-    parser.add_argument("-ip","--IPv4Address",type=str,default=IP_ADDRESS,help="An IPv4 address in the format xxx.xxx.xxx.xxx",)
+    parser.add_argument("-ip","--IPv4Address",type=str,default=DEFAULT_GATEWAY,help="An IPv4 address in the format xxx.xxx.xxx.xxx",)
     parser.add_argument("-p", "--Port", type=int, default=5000, help="A port number")
     parser.add_argument("-id", "--id", type=str, default="Client1", help="The id of the client")
     return parser.parse_args()
