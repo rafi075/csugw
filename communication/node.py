@@ -8,6 +8,7 @@ DEFAULT_IP = "10.1.1.150"
 DEFAULT_PORT = 5000
 DEFAULT_GATEWAY = "10.1.1.1"
 
+
 class Node:
     def __init__(
         self,
@@ -25,26 +26,32 @@ class Node:
 
         def default(data, key, default):
             return data[key] if key in data else default
-        
+
         if config_data is not None:
             self.ID = config_data["ID"]
             self.IP = ip.IPv4Address(str(config_data["IP"]))
             self.PORT = default(config_data, "PORT", int(peerName[1]))
 
             if "." in str(config_data["SUBNET_MASK"]):
-                self.net_mask = (config_data["SUBNET_MASK"], Node.netmask_to_cidr(config_data["SUBNET_MASK"]))
+                self.net_mask = (
+                    config_data["SUBNET_MASK"],
+                    Node.netmask_to_cidr(config_data["SUBNET_MASK"]),
+                )
             else:
-                self.net_mask = (Node.cidr_to_netmask(config_data["SUBNET_MASK"]), config_data["SUBNET_MASK"])
+                self.net_mask = (
+                    Node.cidr_to_netmask(config_data["SUBNET_MASK"]),
+                    config_data["SUBNET_MASK"],
+                )
         else:
             self.ID = ID
             self.PORT = int(peerName[1])
             self.IP = ip.IPv4Address(str(peerName[0]))
-        
+
             if "." in str(net_mask):
                 self.net_mask = (net_mask, Node.netmask_to_cidr(net_mask))
             else:
                 self.net_mask = (Node.cidr_to_netmask(net_mask), net_mask)
-        
+
         self.network_string = str(self.IP) + ":" + str(self.PORT)
         self.network = f""
 
@@ -53,7 +60,6 @@ class Node:
         self.network = ip.IPv4Network(
             f"{'.'.join(str(self.IP).split('.')[:-1])}.0/{str(self.net_mask[1])}"
         )
-
 
         if config_data is not None:
             self.neighbors = default(config_data, "NEIGHBORS", [])
@@ -107,8 +113,7 @@ class Node:
     def cidr_to_netmask(cidr):
         mask = (0xFFFFFFFF >> (32 - cidr)) << (32 - cidr)
         return f"{(mask >> 24) & 0xff}.{(mask >> 16) & 0xff}.{(mask >> 8) & 0xff}.{mask & 0xff}"
-    
-    
+
 
 class HelpMenu:
     SPACING = 80
@@ -220,4 +225,3 @@ class HelpMenu:
 
     def get_name_or_val(self, value) -> str:
         return value.__name__ if hasattr(value, "__name__") else value
-

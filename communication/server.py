@@ -28,7 +28,6 @@ LOG_PADDING = 0
 LOG = True
 
 
-
 # TODO: initialize clients based on config
 #       discuss whether the program should block until all clients are initialized?
 
@@ -77,7 +76,7 @@ class Server:
         if message == Protocols.SHOW:
             self.show_clients()
             return False
-        
+
         if message == ProtocolMethod.COMMAND:
             self.__send_data(client, message)
             return False
@@ -110,7 +109,9 @@ class Server:
                         print("Invalid METHOD:\t", f'"{message}"\n')
                         continue
                     if Protocol.has_key(message_parts[0], ProtocolMethod):
-                        message = Protocol(method=message_parts[0], content=" ".join(message_parts[1:]))
+                        message = Protocol(
+                            method=message_parts[0], content=" ".join(message_parts[1:])
+                        )
                         for client in self.__clients:
                             self.__process_message(client, message, is_receiving=False)
 
@@ -187,8 +188,7 @@ class Server:
                         )
                         self.__threads[-1].start()
 
-    def __initialize_client(self, client:socket.socket):
-
+    def __initialize_client(self, client: socket.socket):
         init = Protocol(
             id="Server", method=ProtocolMethod.INIT, state=ProtocolState.REQ_AWK
         )
@@ -210,18 +210,18 @@ class Server:
                     f"CLIENT CONNECTED: {str(client_node.network_string)}",
                     print_func=self.__print_thread,
                 )
+                self.show_clients()
                 return client_node
             else:
-                CLI.message_error("EITHER CLIENT FAILED TO CONFIG OR MULTIPLE CLIENTS STARTED", print_func=self.__print_thread)
-
-
+                CLI.message_error(
+                    "EITHER CLIENT FAILED TO CONFIG OR MULTIPLE CLIENTS STARTED",
+                    print_func=self.__print_thread,
+                )
 
         if len(self.__clients) == self.max_clients:
             CLI.message_error("MAX CLIENTS CONNECTED", print_func=self.__print_thread)
             client.close()
             return None
-
-
 
         client_node = self.pop_config(client)
         init.content = json.dumps(self.__config_last_entry)
@@ -246,23 +246,13 @@ class Server:
 
         init.state = ProtocolState.FAIL
         init.content = ""
-
-        # self.__clients.append(client_node)
-
         self.__send_data(client, init)
 
         CLI.line()
-        # CLI.message_ok(
-        #     f"CLIENT CONNECTED: {str(client_node.network_string)}",
-        #     print_func=self.__print_thread,
-        # )
-
         CLI.message_caution(
             f"CLIENT CONFIGURING",
             print_func=self.__print_thread,
         )
-        # self.show_client(client_node.ID)
-
         return None
 
     def send(self, client, message: Protocol):
@@ -420,7 +410,6 @@ class Server:
             for thread in self.__threads:
                 if thread.is_alive() and thread != threading.current_thread():
                     thread.join()
-
 
         self.sock.shutdown(socket.SHUT_RDWR)
         self.sock.close()
