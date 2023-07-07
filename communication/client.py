@@ -30,6 +30,7 @@ LOG_PADDING = 0
 LOG_MESSAGE_SIZE = 75.0
 LOG = True
 
+DEFAULT_GATEWAY = "10.1.1.1"
 
 # TODO: Add thread for rely connections to neighbor nodes
 
@@ -38,7 +39,7 @@ class Client:
     def __init__(
         self,
         client_id: str,
-        host="127.0.0.1",
+        host=DEFAULT_GATEWAY,
         port=5000,
         custom_logic=None,
         custom_commands=None,
@@ -346,8 +347,8 @@ class Client:
         self,
         ip: str,
         interface: str = "ens33",
-        gateway: str = "10.1.1.100",
-        dns: str = "10.1.1.1",
+        gateway: str = DEFAULT_GATEWAY,
+        dns: str = DEFAULT_GATEWAY,
     ):
         config = f"""
         [Match]
@@ -387,7 +388,7 @@ def get_args():
         "-ip",
         "--IPv4Address",
         type=str,
-        default="127.0.0.1",
+        default=DEFAULT_GATEWAY,
         help="An IPv4 address in the format xxx.xxx.xxx.xxx",
     )
     parser.add_argument("-p", "--Port", type=int, default=5000, help="A port number")
