@@ -25,10 +25,18 @@
   - [GNS3 Virtual Machine](https://gns3.com/software/download-vm), can also be installed by GNS3 installer
 - [VMware Workstation 17 Pro](https://www.vmware.com/products/workstation-pro/workstation-pro-evaluation.html)
   - Version: `17.0.0 build-20800274`
-
+  - Product Keys
+    ```
+    MC60H-DWHD5-H80U9-6V85M-8280D
+    4A4RR-813DK-M81A9-4U35H-06KND
+    NZ4RR-FTK5H-H81C1-Q30QH-1V2LA
+    JU090-6039P-08409-8J0QH-2YR7F
+    4Y09U-AJK97-089Z0-A3054-83KLA
+    4C21U-2KK9Q-M8130-4V2QH-CF810
+    ```
 
 ## Host Configuration
-Configuration of the Windows Host machine
+Configuration of the Windows Host machine. Carefully consider, and take note of your `GATEWAY_IP` and `GATEWAY_NETMASK` defined in [step 7](#loopback-adapter-configuration)
 
 
 ### Loopback Adapter Installtion
@@ -74,6 +82,8 @@ Configuration of the Windows Host machine
 
 6. Check `Use the following IP address`
 7. Input an IP address and subnet mask
+   1. The info used here will be referred to as the `GATEWAY_IP` and `GATEWAY_NETMASK`, respectively.
+   
 <br><img src="https://i.postimg.cc/N0kNZLKz/windows-adapter-1.png" height="400"> <br>
 
 

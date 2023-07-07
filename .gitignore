@@ -6,3 +6,4 @@ communication/cli_testfile.py
 .vscode
 .dist
 communication/notes.py
+communication/example/__pycache__

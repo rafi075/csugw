@@ -1,10 +1,9 @@
-# GNS3 First Project
->
-> GNS3 can run on the host machine, but it is recommended to leverage the GNS3 VM for enhanced virtualization ability. This guide will use the GNS3 VM.
+# GNS3 Complete Project
+
 
 ## Table of Contents
 
-- [GNS3 First Project](#gns3-first-project)
+- [GNS3 Complete Project](#gns3-complete-project)
   - [Table of Contents](#table-of-contents)
   - [Setup](#setup)
   - [Result](#result)
@@ -12,7 +11,10 @@
 
 ## Setup
 
-1. Create a new project and wait for both servers to be running
+1. Clone the repository on the Windows host machine
+2. Follow the steps outlined in [windows setup](../setup/windows.md) and [VMware setup](../setup/vmplayer.md). **To follow this doc, use `GATEWAY_IP = 10.1.1.1` and `GATEWAY_NETMASK = 255.255.0.0`**
+
+ Create a new project and wait for both servers to be running
 <br><img src="https://i.postimg.cc/yY2rZMqv/firstproj-proj-0.png" height="100"><br>
 
 >Initialize the following devices:
