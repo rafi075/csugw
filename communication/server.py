@@ -28,7 +28,6 @@ LOG_PADDING = 0
 LOG = True
 
 
-
 # TODO: initialize clients based on config
 #       discuss whether the program should block until all clients are initialized?
 
@@ -41,7 +40,7 @@ class Server:
         self.port = port
         self.__config_content = []
         self.__config_content_queue = []
-        self.__config_last_entry = -1
+        self.__config_last_entry = None
         self.__clients = []
         self.__threads = []
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -64,6 +63,7 @@ class Server:
         self.config_path = os.path.join(self.dir_path, "config.json")
         self.config_schema_path = os.path.join(self.dir_path, "config_schema.json")
         self.max_clients = 0
+        self.awaiting_connection = None
 
     def __process_message(self, client, message: Protocol, is_receiving=False):
         if not message:
@@ -75,6 +75,10 @@ class Server:
 
         if message == Protocols.SHOW:
             self.show_clients()
+            return False
+
+        if message == ProtocolMethod.COMMAND:
+            self.__send_data(client, message)
             return False
 
         if self.custom_logic is not None:
@@ -98,13 +102,16 @@ class Server:
                 if self.__is_active(sys.stdin):
                     message = input()
                     result = self.__commands(message)
-                    if result is False:
-                        continue
+                    message_parts = message.split(" ")
+                    # if result is False:
+                    #     continue
                     if result == "VOID":
                         print("Invalid METHOD:\t", f'"{message}"\n')
                         continue
-                    if Protocol.has_key(message, ProtocolMethod):
-                        message = Protocol(method=message)
+                    if Protocol.has_key(message_parts[0], ProtocolMethod):
+                        message = Protocol(
+                            method=message_parts[0], content=" ".join(message_parts[1:])
+                        )
                         for client in self.__clients:
                             self.__process_message(client, message, is_receiving=False)
 
@@ -170,6 +177,8 @@ class Server:
                 with self.__locks["clients"]:
                     if address not in self.__clients:
                         client_node = self.__initialize_client(client)
+
+                # Handle client thread
                 if client_node is not None:
                     with self.__locks["thread"]:
                         self.__threads.append(
@@ -179,24 +188,45 @@ class Server:
                         )
                         self.__threads[-1].start()
 
-    def __initialize_client(self, client):
-        CLI.message_ok(
-            f"ININT",
-            print_func=self.__print_thread,
+    def __initialize_client(self, client: socket.socket):
+        init = Protocol(
+            id="Server", method=ProtocolMethod.INIT, state=ProtocolState.REQ_AWK
         )
+
+        # Check if client is returning from configuration reboot
+        if self.awaiting_connection is not None:
+            # get ip address from socket named client
+            client_ip = str(client.getpeername()[0])
+            if client_ip == str(self.awaiting_connection.IP):
+                self.awaiting_connection = None
+                client_node = Node(client, config_data=self.__config_last_entry)
+                self.__clients.append(client_node)
+
+                init.state = ProtocolState.SUCCESS
+                init.content = ""
+                self.__send_data(client, init)
+
+                CLI.message_ok(
+                    f"CLIENT CONNECTED: {str(client_node.network_string)}",
+                    print_func=self.__print_thread,
+                )
+                self.show_clients()
+                return client_node
+            else:
+                CLI.message_error(
+                    "EITHER CLIENT FAILED TO CONFIG OR MULTIPLE CLIENTS STARTED",
+                    print_func=self.__print_thread,
+                )
 
         if len(self.__clients) == self.max_clients:
             CLI.message_error("MAX CLIENTS CONNECTED", print_func=self.__print_thread)
             client.close()
             return None
 
-        init = Protocol(
-            id="Server", method=ProtocolMethod.INIT, state=ProtocolState.REQ_AWK
-        )
-
         client_node = self.pop_config(client)
         init.content = json.dumps(self.__config_last_entry)
         self.__send_data(client, init)
+        self.awaiting_connection = client_node
 
         while not self.__is_active(client):
             pass
@@ -207,27 +237,23 @@ class Server:
             client.shutdown(0)
             client.close()
             CLI.message_error("CLIENT DISCONNECTED", print_func=self.__print_thread)
-            return
+            return None
         elif response == ProtocolMethod.INIT:
             if response.state != ProtocolState.AWK:
                 CLI.message_error("NEVER GOT AWK", print_func=self.__print_thread)
                 self.__config_content_queue.insert(0, self.__config_last_entry)
                 return None
 
-        init.state = ProtocolState.SUCCESS
+        init.state = ProtocolState.FAIL
         init.content = ""
-        self.__clients.append(client_node)
-
         self.__send_data(client, init)
 
         CLI.line()
-        CLI.message_ok(
-            f"CLIENT CONNECTED: {str(client_node.network_string)}",
+        CLI.message_caution(
+            f"CLIENT CONFIGURING",
             print_func=self.__print_thread,
         )
-        self.show_client(client_node.ID)
-
-        return client_node
+        return None
 
     def send(self, client, message: Protocol):
         self.__send_data(client, message)
@@ -384,7 +410,6 @@ class Server:
             for thread in self.__threads:
                 if thread.is_alive() and thread != threading.current_thread():
                     thread.join()
-
 
         self.sock.shutdown(socket.SHUT_RDWR)
         self.sock.close()

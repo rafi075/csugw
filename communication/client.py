@@ -81,7 +81,7 @@ class Client:
 
         if message == ProtocolMethod.INIT:
             if message.state == ProtocolState.REQ_AWK:
-                self.node = Node(self.sock, config_data = json.loads(message.content))
+                self.node = Node(self.sock, config_data=json.loads(message.content))
                 message = Protocol(method=ProtocolMethod.INIT, state=ProtocolState.AWK)
                 self.__send_data(message)
                 return False
@@ -89,22 +89,21 @@ class Client:
                 CLI.message_ok("CONNECTED", print_func=self.__print_thread)
                 return False
             else:
-                CLI.message_error("INIT FAILED", print_func=self.__print_thread)
-                return True
+                # CLI.message_error("INIT FAILED", print_func=self.__print_thread)
+                self.os_set_IP(ip=str(self.node.IP))
+                return False
 
         if message == ProtocolMethod.COMMAND:
-            # msg = message.content.split(" ")
             self.run_command(*message.content.split(" "))
             return False
 
         if message == ProtocolMethod.SCRIPT:
-            # msg = message.content.split(" ")
             self.run_script(*message.content.split(" "))
             return False
 
         if message == ProtocolMethod.EXIT:
-            return self.disconnect(state = message.state)
-            
+            return self.disconnect(state=message.state)
+
         if self.custom_logic is not None:
             return self.custom_logic(self, self.sock, message)
 
@@ -218,7 +217,6 @@ class Client:
     def send(self, message: Protocol, sign: bool = True, encoding: str = "ascii"):
         self.__send_data(message, sign=sign)
 
-
     # Duel OS Implementation
     def __is_active(self, stream, timeout=1):
         if os.name == "nt":  # for Windows
@@ -232,7 +230,7 @@ class Client:
             while True:
                 if msvcrt.kbhit():
                     return True
-                if time.time() - start_time > timeout: 
+                if time.time() - start_time > timeout:
                     return False
         else:  # for Unix/Linux/MacOS/BSD/etc
             ready, _, _ = select.select([sys.stdin], [], [], timeout)
@@ -260,13 +258,17 @@ class Client:
 
     def __log_send(self, message):
         if LOG:
-            output = f"[LOG - {time.strftime('%X')}] {CLI.color('steelblue', 'SENDING:')}\n"
+            output = (
+                f"[LOG - {time.strftime('%X')}] {CLI.color('steelblue', 'SENDING:')}\n"
+            )
             output += f'{self.__get_socket_address(self.sock)} {"-->"} {str(message):<{LOG_PADDING}}\n'
             self.__print_thread(output, clr="gray")
 
     def __log_receive(self, message):
         if LOG:
-            output = f"[LOG - {time.strftime('%X')}] {CLI.color('tomato', 'RECEIVED:')}\n"
+            output = (
+                f"[LOG - {time.strftime('%X')}] {CLI.color('tomato', 'RECEIVED:')}\n"
+            )
             output += f'{self.__get_socket_address(self.sock)} {"<--"} {str(message):<{LOG_PADDING}}\n'
             self.__print_thread(output, clr="gray")
 
@@ -275,29 +277,36 @@ class Client:
         return CLI.color("aquamarine", f"{str(peer_name[0])} : {str(peer_name[1])}")
 
     def shutdown(self):
-        self.disconnect(state = ProtocolState.DEFAULT)
+        self.disconnect(state=ProtocolState.DEFAULT)
 
-    def  disconnect(self, state:ProtocolState = ProtocolState.AWK):
+    def disconnect(self, state: ProtocolState = ProtocolState.AWK):
         if state == ProtocolState.REQ_AWK:
-            self.__send_data(Protocol(method=ProtocolMethod.EXIT, state=ProtocolState.AWK))
-            CLI.message_error("CONNECTION CLOSED BY SERVER", print_func=self.__print_thread)
+            self.__send_data(
+                Protocol(method=ProtocolMethod.EXIT, state=ProtocolState.AWK)
+            )
+            CLI.message_error(
+                "CONNECTION CLOSED BY SERVER", print_func=self.__print_thread
+            )
             self.sock.close()
             self.running = False
             self.__exit_event.set()
             return True
-        
+
         if state == ProtocolState.AWK:
             CLI.message_error("CONNECTION CLOSED", print_func=self.__print_thread)
             self.sock.close()
             self.running = False
             self.__exit_event.set()
             return True
-        
-        if state == ProtocolState.DEFAULT:
-            CLI.message_caution("REQUESTING TERMINATION", print_func=self.__print_thread)
-            self.__send_data(Protocol(method=ProtocolMethod.EXIT, state=ProtocolState.REQ_AWK))
-            return False
 
+        if state == ProtocolState.DEFAULT:
+            CLI.message_caution(
+                "REQUESTING TERMINATION", print_func=self.__print_thread
+            )
+            self.__send_data(
+                Protocol(method=ProtocolMethod.EXIT, state=ProtocolState.REQ_AWK)
+            )
+            return False
 
         # self.running = False
         # self.__exit_event.set()
@@ -322,40 +331,38 @@ class Client:
     def display_network(self):
         CLI.message_ok(self.__get_socket_address(self.sock))
 
-
     # TODO:
     # Terminate socket connection (maybe?)
     # reconfigure OS network interface
     # Re-establish socket connection to server
-    def os_set_IP(self, ip: str, interface: str = "ens33"):
-        self.sock.close()
-        output = API.exe_bash("/root/scripts/set_ip", ip, interface)
-        time.sleep(0.5)
-        # self.sock.connect((ip, self.port))
+    def os_set_IP(
+        self,
+        ip: str,
+        interface: str = "ens33",
+        gateway: str = "10.1.1.100",
+        dns: str = "10.1.1.1",
+    ):
+        config = f"""
+        [Match]
+        Name={interface}
 
+        [Network]
+        Address={ip}/24
+        Gateway={gateway}
+        DNS={dns}
 
-        connected = False
-        wait_time = 1
-        while not connected:
-            try:
-                self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.sock.settimeout(1.0)
-                self.sock.connect((self.host, self.port))
-                connected = True
-            except socket.error as err:
-                CLI.message_caution(
-                    f"Unable to resolve IP address, retrying in {wait_time} second(s)...",
-                    print_func=self.__print_thread,
-                )
-                time.sleep(wait_time)
+        """
 
-        print(output)
-        return output
+        # open a file at /root/configuration/ens33.conf and replace all lines with the config variable
+        with open(f"/root/configuration/{interface}.conf", "w") as f:
+            f.write(config)
+
+        self.disconnect(state=ProtocolState.AWK)
+        self.run_command("reboot")
 
     def run_script(self, command: str, *args):
         prefix = "./" if command[0] != "/" else ""
         output = API.exe_bash(f"{prefix}{command}", *args)
-        # output = API.exe_bash(f"/root/scripts/{command}", *args)
         print(output)
         return output
 
@@ -389,11 +396,6 @@ if __name__ == "__main__":
     exit(0)
 
 
-
-
-
-
-
 """
 TODO:
 - Durning INIT
@@ -401,6 +403,7 @@ TODO:
     - we need to 
         - pop config ip                                                                         done
         - send config ip to client                                                              done
+        - close socket connection                                                               done
         - client call OS level script to reconfigure network                                    done
             - assume client will DC here                                                        * talk with Rakibul
                 - if so, need to assess how server will handle reconnection                     *
