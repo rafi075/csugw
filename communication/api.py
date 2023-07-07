@@ -16,7 +16,8 @@ class API:
     EXECUTABLE = "python3"
     PATH = ""
 
-    def execute(self, executable=None, path=None, *args) -> str:
+    @staticmethod
+    def execute(executable=None, path=None, *args) -> str:
         """
         Parameters:
             *args (str):        Command line arguments to be passed to the program.
@@ -29,13 +30,14 @@ class API:
             str:                The output of the executed CLI program.
         """
         if executable is None:
-            executable = self.EXECUTABLE
+            executable = API.EXECUTABLE
         if path is None:
-            path = self.PATH
+            path = API.PATH
 
-        return self._exec(executable, path, *args)
+        return API._exec(executable, path, *args)
 
-    def _exec(self, executable: str, path: str, *args) -> str:
+    @staticmethod
+    def _exec(executable: str, path: str, *args) -> str:
         """
         Parameters:
             executable (str):   How to run the program (e.g., 'python3', 'g++', 'echo', etc.)
@@ -46,19 +48,30 @@ class API:
             str:                The output of the executed CLI program.
         """
         # Command to execute
-        command = [executable, path] + list(args)
+        if executable:
+            command = [executable, path] + list(args)
+        else:
+            command = [path] + list(args)
 
-        # Run command, capturing STDOUT and STDERR with subprocess.PIPE
-        process = subprocess.run(
-            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-        )
+        try:
+            # Run command, capturing STDOUT and STDERR with subprocess.PIPE
+            process = subprocess.run(
+                command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+            )
+        except subprocess.CalledProcessError as e:
+            # print(e.stdout)
+            # print(e.stderr)
+            return "FAIL"
+        except:
+            return "EXEC ERROR"
 
         if process.returncode != 0:
             return f"EXEC ERROR: {process.stderr}"
 
         return process.stdout
 
-    def get(self, tag: str) -> str:
+    @staticmethod
+    def get(tag: str) -> str:
         """
         Parameters:
             tag (str):          Tag to search for.
@@ -66,9 +79,10 @@ class API:
         Returns:
             str:                Value returned by Simulator
         """
-        return self.execute(self.EXECUTABLE, self.PATH, "GET", str(tag))
+        return API.execute(API.EXECUTABLE, API.PATH, "GET", str(tag))
 
-    def set(self, tag: str, value: str) -> str:
+    @staticmethod
+    def set(tag: str, value: str) -> str:
         """
         Parameters:
             tag (str):          Target Tag.
@@ -77,4 +91,41 @@ class API:
         Returns:
             str:                Value returned by Simulator.
         """
-        return self.execute(self.EXECUTABLE, self.PATH, "SET", str(tag), str(value))
+        return API.execute(API.EXECUTABLE, API.PATH, "SET", str(tag), str(value))
+
+
+    @staticmethod
+    def exe_python(path: str, *args) -> str:
+        """
+        Parameters:
+            path (str):         Path to the file to run.
+            *args (str):        Command line arguments to be passed to the program.
+
+        Returns:
+            str:                The output of the executed CLI program.
+        """
+        return API.execute("python3", path, *args)
+    
+    @staticmethod
+    def exe_bash(path: str = "", *args) -> str:
+        """
+        Parameters:
+            path (str):         Path to the file to run.
+            *args (str):        Command line arguments to be passed to the program.
+
+        Returns:
+            str:                The output of the executed CLI program.
+        """
+        return API.execute("", path, *args)
+    
+    @staticmethod
+    def exe_sh(path: str = "", *args) -> str:
+        """
+        Parameters:
+            path (str):         Path to the file to run.
+            *args (str):        Command line arguments to be passed to the program.
+
+        Returns:
+            str:                The output of the executed CLI program.
+        """
+        return API.execute("sh", path, *args)

@@ -25,6 +25,24 @@ CLI_CLIENT_COMMANDS = [
         "Function": "display_network",
         "Parameters": 0,
     },
+    {
+        "Commands": ["script", "exec"],
+        "Description": "Executes a bash script from /root/scripts/",
+        "Function": "run_script",
+        "Parameters": 1,
+    },
+    {
+        "Commands": ["ip", "reconfig"],
+        "Description": "",
+        "Function": "os_set_IP",
+        "Parameters": 1,
+    },
+    {
+        "Commands": ["command", "./"],
+        "Description": "Executes a bash command",
+        "Function": "run_command",
+        "Parameters": 1,
+    },
 ]
 
 CLI_DEFAULT_COMMANDS = []

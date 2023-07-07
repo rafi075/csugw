@@ -1,5 +1,7 @@
 communication/__pycache__
 communication/.dist
+communication/example/__pycache__
+communication/example/.dist
 communication/cli_testfile.py
 .vscode
 .dist

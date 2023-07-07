@@ -10,8 +10,9 @@ import threading
 from random import randrange
 import time
 import traceback
-import api as API
+from api import API
 import jsonschema
+from node import Node
 
 import lib_cli as CLI
 
@@ -48,20 +49,25 @@ class Client:
         self.__exit_event = threading.Event()
         self.initialized = False
         self.sock = None
+        self.port = port
+        self.host = host
 
         self.custom_logic = custom_logic
         self.custom_commands = [] if custom_commands is None else custom_commands
+        self.node: Node = None
 
         self.__selector_sock = selectors.DefaultSelector()
         self.__selector_input = selectors.DefaultSelector()
+
 
         CLI.message_caution(
             f"Starting Client",
             print_func=self.__print_thread,
         )
         time.sleep(5.0)
-        connected = False
+
         wait_time = 5
+        connected = False
         while not connected:
             try:
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -80,24 +86,30 @@ class Client:
             CLI.message_caution("GOT EMPTY MESSAGE", print_func=self.__print_thread)
             return False
 
-        if message == Protocols.INITIALIZE:
-            if not self.initialized:
-                message = Protocol(
-                    method=ProtocolMethod.INIT,
-                    id=self.id,
-                    content="Nothing Neat",
-                )
+        if message == ProtocolMethod.INIT:
+            if message.state == ProtocolState.REQ_AWK:
+                self.node = Node(self.sock, config_data=json.loads(message.content))
+                message = Protocol(method=ProtocolMethod.INIT, state=ProtocolState.AWK)
                 self.__send_data(message)
-                self.initialized = True
+                return False
+            elif message.state == ProtocolState.SUCCESS:
+                CLI.message_ok("CONNECTED", print_func=self.__print_thread)
+                return False
             else:
-                CLI.message_ok(
-                    "INITIALIZATION SUCCESSFUL", print_func=self.__print_thread
-                )
+                # CLI.message_error("INIT FAILED", print_func=self.__print_thread)
+                self.os_set_IP(ip=str(self.node.IP))
+                return False
+
+        if message == ProtocolMethod.COMMAND:
+            self.run_command(*message.content.split(" "))
             return False
 
-        if message == Protocols.DISCONNECT:
-            self.disconnect()
-            return True
+        if message == ProtocolMethod.SCRIPT:
+            self.run_script(*message.content.split(" "))
+            return False
+
+        if message == ProtocolMethod.EXIT:
+            return self.disconnect(state=message.state)
 
         if self.custom_logic is not None:
             return self.custom_logic(self, self.sock, message)
@@ -134,7 +146,7 @@ class Client:
                 break
 
     def __command_line(self):
-        from cli_commands import CLI_DEFAULT_COMMANDS, CLI_CLIENT_COMMANDS
+        from cli_commands import CLI_CLIENT_COMMANDS
 
         self.custom_commands = self.custom_commands + CLI_CLIENT_COMMANDS
         while not self.__exit_event.is_set():
@@ -212,20 +224,20 @@ class Client:
     def send(self, message: Protocol, sign: bool = True, encoding: str = "ascii"):
         self.__send_data(message, sign=sign)
 
+    # Duel OS Implementation
     def __is_active(self, stream, timeout=1):
         if os.name == "nt":  # for Windows
             if type(stream) is socket.socket:
                 ready, _, _ = select.select([stream], [], [], timeout)
                 return ready
-
             import msvcrt
             import time
 
             start_time = time.time()
             while True:
-                if msvcrt.kbhit():  # keypress is waiting, return True
+                if msvcrt.kbhit():
                     return True
-                if time.time() - start_time > timeout:  # timeout
+                if time.time() - start_time > timeout:
                     return False
         else:  # for Unix/Linux/MacOS/BSD/etc
             ready, _, _ = select.select([sys.stdin], [], [], timeout)
@@ -233,6 +245,8 @@ class Client:
 
     def __send_data(self, message, sign: bool = True, encoding: str = "ascii"):
         if type(message) is Protocol:
+            if sign:
+                message.id = self.node.ID
             message = message.to_network(encoding=encoding)
             self.__log_send(message)
             self.sock.send(message)
@@ -251,13 +265,17 @@ class Client:
 
     def __log_send(self, message):
         if LOG:
-            output = f"[LOG] {CLI.color('steelblue', 'SENDING:')}\n"
+            output = (
+                f"[LOG - {time.strftime('%X')}] {CLI.color('steelblue', 'SENDING:')}\n"
+            )
             output += f'{self.__get_socket_address(self.sock)} {"-->"} {str(message):<{LOG_PADDING}}\n'
             self.__print_thread(output, clr="gray")
 
     def __log_receive(self, message):
         if LOG:
-            output = f"[LOG] {CLI.color('tomato', 'RECEIVED:')}\n"
+            output = (
+                f"[LOG - {time.strftime('%X')}] {CLI.color('tomato', 'RECEIVED:')}\n"
+            )
             output += f'{self.__get_socket_address(self.sock)} {"<--"} {str(message):<{LOG_PADDING}}\n'
             self.__print_thread(output, clr="gray")
 
@@ -266,13 +284,39 @@ class Client:
         return CLI.color("aquamarine", f"{str(peer_name[0])} : {str(peer_name[1])}")
 
     def shutdown(self):
-        self.disconnect()
+        self.disconnect(state=ProtocolState.DEFAULT)
 
-    def disconnect(self):
-        self.__send_data(Protocols.DISCONNECT)
-        CLI.message_error("TERMINATED BY SERVER", print_func=self.__print_thread)
-        self.running = False
-        self.__exit_event.set()
+    def disconnect(self, state: ProtocolState = ProtocolState.AWK):
+        if state == ProtocolState.REQ_AWK:
+            self.__send_data(
+                Protocol(method=ProtocolMethod.EXIT, state=ProtocolState.AWK)
+            )
+            CLI.message_error(
+                "CONNECTION CLOSED BY SERVER", print_func=self.__print_thread
+            )
+            self.sock.close()
+            self.running = False
+            self.__exit_event.set()
+            return True
+
+        if state == ProtocolState.AWK:
+            CLI.message_error("CONNECTION CLOSED", print_func=self.__print_thread)
+            self.sock.close()
+            self.running = False
+            self.__exit_event.set()
+            return True
+
+        if state == ProtocolState.DEFAULT:
+            CLI.message_caution(
+                "REQUESTING TERMINATION", print_func=self.__print_thread
+            )
+            self.__send_data(
+                Protocol(method=ProtocolMethod.EXIT, state=ProtocolState.REQ_AWK)
+            )
+            return False
+
+        # self.running = False
+        # self.__exit_event.set()
 
     def __print_thread(self, *args, **kwargs):
         kwargs = {**{"sep": " ", "end": "\n"}, **kwargs}
@@ -293,6 +337,46 @@ class Client:
 
     def display_network(self):
         CLI.message_ok(self.__get_socket_address(self.sock))
+
+    # TODO:
+    # Terminate socket connection (maybe?)
+    # reconfigure OS network interface
+    # Re-establish socket connection to server
+    def os_set_IP(
+        self,
+        ip: str,
+        interface: str = "ens33",
+        gateway: str = "10.1.1.100",
+        dns: str = "10.1.1.1",
+    ):
+        config = f"""
+        [Match]
+        Name={interface}
+
+        [Network]
+        Address={ip}/24
+        Gateway={gateway}
+        DNS={dns}
+
+        """
+
+        # open a file at /root/configuration/ens33.conf and replace all lines with the config variable
+        with open(f"/root/configuration/{interface}.conf", "w") as f:
+            f.write(config)
+
+        self.disconnect(state=ProtocolState.AWK)
+        self.run_command("reboot")
+
+    def run_script(self, command: str, *args):
+        prefix = "./" if command[0] != "/" else ""
+        output = API.exe_bash(f"{prefix}{command}", *args)
+        print(output)
+        return output
+
+    def run_command(self, command: str, *args):
+        output = API.exe_bash(f"{command}", *args)
+        print(output)
+        return output
 
 
 def get_args():
@@ -317,3 +401,20 @@ if __name__ == "__main__":
     client = Client(client_id, host=args.IPv4Address, port=args.Port)
     client.run()
     exit(0)
+
+
+"""
+TODO:
+- Durning INIT
+    - first connection will have default ip, lets say 10.1.1.250                                done
+    - we need to 
+        - pop config ip                                                                         done
+        - send config ip to client                                                              done
+        - close socket connection                                                               done
+        - client call OS level script to reconfigure network                                    done
+            - assume client will DC here                                                        * talk with Rakibul
+                - if so, need to assess how server will handle reconnection                     *
+                - + error cases? (user error: multiple connections)                             *               
+
+        - reconnect to server                                                                   *          
+"""
