@@ -28,13 +28,15 @@ LOG_PADDING = 0
 LOG = True
 
 
+DEFAULT_GATEWAY = "10.1.1.1"
+
 # TODO: initialize clients based on config
 #       discuss whether the program should block until all clients are initialized?
 
 
 class Server:
     def __init__(
-        self, host="127.0.0.1", port=5000, custom_logic=None, custom_commands=None
+        self, host=DEFAULT_GATEWAY, port=5000, custom_logic=None, custom_commands=None
     ):
         self.host = host
         self.port = port
@@ -544,7 +546,7 @@ if __name__ == "__main__":
         "-ip",
         "--IPv4Address",
         type=str,
-        default="127.0.0.1",
+        default=DEFAULT_GATEWAY,
         help="An IPv4 address in the format xxx.xxx.xxx.xxx",
     )
     parser.add_argument("-p", "--Port", type=int, default=5000, help="A port number")
