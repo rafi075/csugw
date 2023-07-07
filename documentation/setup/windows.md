@@ -36,7 +36,7 @@
     ```
 
 ## Host Configuration
-Configuration of the Windows Host machine
+Configuration of the Windows Host machine. Carefully consider, and take note of your `GATEWAY_IP` and `GATEWAY_NETMASK` defined in [step 7](#loopback-adapter-configuration)
 
 
 ### Loopback Adapter Installtion
@@ -82,6 +82,8 @@ Configuration of the Windows Host machine
 
 6. Check `Use the following IP address`
 7. Input an IP address and subnet mask
+   1. The info used here will be referred to as the `GATEWAY_IP` and `GATEWAY_NETMASK`, respectively.
+   
 <br><img src="https://i.postimg.cc/N0kNZLKz/windows-adapter-1.png" height="400"> <br>
 
 

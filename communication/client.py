@@ -55,6 +55,11 @@ class Client:
         self.__selector_sock = selectors.DefaultSelector()
         self.__selector_input = selectors.DefaultSelector()
 
+        CLI.message_caution(
+            f"Starting Client",
+            print_func=self.__print_thread,
+        )
+        time.sleep(5.0)
         connected = False
         wait_time = 5
         while not connected:
