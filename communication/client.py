@@ -65,7 +65,7 @@ class Client:
             f"Starting Client",
             print_func=self.__print_thread,
         )
-        time.sleep(5.0)
+        time.sleep(1.0)
 
         wait_time = 5
         connected = False
