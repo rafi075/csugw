@@ -43,48 +43,48 @@ Configuration of the Windows Host machine. Carefully consider, and take note of 
 1. ***Disable Windows Firewall***
 2. Open CMD
 3. Execute `hdwwiz.exe`
-<br><img src="https://i.postimg.cc/mrjw8qqx/windows-hdwwiz-0.png" height="100"> <br>
+<br><img src="https://github.com/rafi075/csugw/assets/78711391/3172f576-fb0a-4808-a082-a243a80a575e" height="100"> <br>
 
 
 4. Click `Next`
-<br><img src="https://i.postimg.cc/SsKG5dFn/windows-hdwwiz-1.png" height="200"> <br>
+<br><img src="https://github.com/rafi075/csugw/assets/78711391/4af8c7cc-e085-4a17-823e-378d95fe32b1" height="200"> <br>
 
 
 5. Choose to install hardware manually then click `Next`
-<br><img src="https://i.postimg.cc/wvbkdNg0/windows-hdwwiz-2.png" height="300"> <br>
+<br><img src="https://github.com/rafi075/csugw/assets/78711391/b25c0fd0-4683-47da-aed2-2ebaa58c9b78" height="300"> <br>
 
 
 6. Choose `Network adapters`, then click `Next`
-<br><img src="https://i.postimg.cc/nrjGVLLZ/windows-hdwwiz-3.png" height="300"> <br>
+<br><img src="https://github.com/rafi075/csugw/assets/78711391/5753081a-38a4-4373-88dc-1003718f9f5b" height="300"> <br>
 
 
 7. Select `Microsoft` as the manufacturer, and choose the `KM-TEST Loopback Adapter`. Click Next twice to install the adapter and Finish.
-<br><img src="https://i.postimg.cc/0jTdzq6S/windows-hdwwiz-4.png" height="300"> <br>
+<br><img src="https://github.com/rafi075/csugw/assets/78711391/70abfc22-298b-43e9-81c0-4add1cbb3d50" height="300"> <br>
 
 
 8. Verify that the adapter is installed
 >Start > Settings > Control Panel > Network and Sharing Center > Change Adapter Settings
-<br><img src="https://i.postimg.cc/KcR63rkc/windows-hdwwiz-5.png" height="200"> <br>
+<br><img src="https://github.com/rafi075/csugw/assets/78711391/ee6bb090-1ffb-4d2f-b322-69cb7db8dac0" height="200"> <br>
 
 
 ### Loopback Adapter Configuration
 1. Navigate to Network Adapters
 >Start > Settings > Control Panel > Network and Sharing Center > Change Adapter Settings
 2. Right click the loopback adapter
-<br><img src="https://i.postimg.cc/KcR63rkc/windows-hdwwiz-5.png" height="200"> <br>
+<br><img src="https://github.com/rafi075/csugw/assets/78711391/ee6bb090-1ffb-4d2f-b322-69cb7db8dac0" height="200"> <br>
 
 
 3. Select `Properties`
 4. Find `Internet Protocol Version 4 (TCP/IPv4)`
 5. Select `Properties`
-<br><img src="https://i.postimg.cc/Y92X7kgq/windows-adapter-0.png" height="400"> <br>
+<br><img src="https://github.com/rafi075/csugw/assets/78711391/b81e5f1a-6e11-4895-8b5c-0e1d66c4963e" height="400"> <br>
 
 
 6. Check `Use the following IP address`
 7. Input an IP address and subnet mask
    1. The info used here will be referred to as the `GATEWAY_IP` and `GATEWAY_NETMASK`, respectively.
    
-<br><img src="https://i.postimg.cc/N0kNZLKz/windows-adapter-1.png" height="400"> <br>
+<br><img src="https://github.com/rafi075/csugw/assets/78711391/2b9f7acf-cb53-4ebe-996e-f843c128740d" height="400"> <br>
 
 
 8. Click `Ok` to confirm settings
