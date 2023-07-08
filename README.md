@@ -22,6 +22,7 @@
 - [:file_folder: Documentation](./documentation/) 
   - [:file_folder: GNS3 Project](./documentation/demo/) 
     - [:page_facing_up: First Project](./documentation/demo/firstproject.md)
+    - [:page_facing_up: Complete Project](./documentation/demo/completeproject.md)
   - [:file_folder: Setup](./documentation/setup/) 
     - [:page_facing_up: Windows Host](./documentation/setup/windows.md)
     - [:page_facing_up: VMware Workstation](./documentation/setup/vmplayer.md)
