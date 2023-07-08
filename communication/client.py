@@ -350,16 +350,7 @@ class Client:
         gateway: str = DEFAULT_GATEWAY,
         dns: str = DEFAULT_GATEWAY,
     ):
-        config = f"""
-        [Match]
-        Name={interface}
-
-        [Network]
-        Address={ip}/24
-        Gateway={gateway}
-        DNS={dns}
-
-        """
+        config = f"[Match]\nName={interface}\n\n[Network]\nAddress={ip}/24\nGateway={gateway}\nDNS={dns}\n"
 
         # open a file at /root/configuration/ens33.conf and replace all lines with the config variable
         with open(f"/root/configuration/{interface}.conf", "w") as f:
