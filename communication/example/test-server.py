@@ -22,9 +22,9 @@ def program_arguments():
     return parser.parse_args()
 
 
-def send_hook(client: Server, obj: Node, message: Protocol or str):
+def send_hook(server: Server, client: Node, message: Protocol or str):
     CLI.message_ok("Send Hook", colr="BlueViolet")
-    print(message.content)
+    server.send(client, message)
     return False
 
 

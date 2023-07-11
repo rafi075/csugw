@@ -22,7 +22,7 @@ def program_arguments():
 
 def send_hook(client: Client, obj: Node, message: Protocol or str):
     CLI.message_ok("Send Hook", colr="BlueViolet")
-    print(message.content)
+    client.send(message)
     return False
 
 
