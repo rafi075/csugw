@@ -1,4 +1,5 @@
 import argparse
+from random import randint
 import sys
 sys.path.append("..")
 from server import Server
@@ -24,7 +25,12 @@ def program_arguments():
 
 def send_hook(server: Server, client: Node, message: Protocol or str):
     CLI.message_ok("Send Hook", colr="BlueViolet")
+
+    if message == ProtocolMethod.DEMO:
+        message.content = f"{randint(1, 100)}"
+
     server.send(client, message)
+    
     return False
 
 
@@ -33,11 +39,7 @@ def receive_hook(server: Server, client: Node, message: Protocol or str):
 
     if message == ProtocolMethod.DEMO:
         # Show custom logic is being ran
-        CLI.message_ok("DEMO", colr="BlueViolet")
-
-        # Send a number to the client
-        message.content = "10"
-        server.send(client, message)
+        CLI.message_ok(f"DOUBLED: {message.content}", colr="BlueViolet")
     
 
     return False
