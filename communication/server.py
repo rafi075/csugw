@@ -39,8 +39,8 @@ class Server:
         self,
         host=DEFAULT_GATEWAY,
         port=5000,
-        send_hook: function = None,
-        receive_hook: function = None,
+        send_hook = None,
+        receive_hook = None,
         custom_commands=None,
     ):
         self.host = host
