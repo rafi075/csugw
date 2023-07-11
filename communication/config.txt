@@ -1,2 +1,0 @@
-SENDTO:1:hello client no 1
-SENDTO:2:No hello client no 2
