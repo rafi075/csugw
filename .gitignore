@@ -7,3 +7,4 @@ communication/cli_testfile.py
 .dist
 communication/notes.py
 communication/example/__pycache__
+communication/config.txt
