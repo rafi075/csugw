@@ -20,14 +20,14 @@ def program_arguments():
 
 
 
-def send_hook(client: Client, obj: Node, message: Protocol or str):
+def send_hook(client: Client, obj: socket.socket, message: Protocol or str):
     CLI.message_ok("Send Hook", colr="BlueViolet")
     client.send(message)
     return False
 
 
 
-def receive_hook(client: Client, obj: Node, message: Protocol or str):
+def receive_hook(client: Client, obj: socket.socket, message: Protocol or str):
     CLI.message_ok("Receive Hook", colr="BlueViolet")
 
     # if attack_lib():

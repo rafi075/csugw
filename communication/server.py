@@ -90,10 +90,10 @@ class Server:
             return False
 
         if self.receive_hook is not None and is_receiving:
-            return self.receive_hook(self, self.sock, message)
+            return self.receive_hook(self, client, message)
 
         if self.send_hook is not None and not is_receiving:
-            return self.send_hook(self, self.sock, message)
+            return self.send_hook(self, client, message)
 
         # If no other cases have been hit, send the message to the client
         if not is_receiving:
