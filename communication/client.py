@@ -41,7 +41,8 @@ class Client:
         client_id: str,
         host=DEFAULT_GATEWAY,
         port=5000,
-        custom_logic=None,
+        receive_hook=None,
+        send_hook=None,
         custom_commands=None,
     ):
         self.id = client_id
@@ -53,7 +54,8 @@ class Client:
         self.port = port
         self.host = host
 
-        self.custom_logic = custom_logic
+        self.receive_hook = receive_hook
+        self.send_hook = send_hook
         self.custom_commands = [] if custom_commands is None else custom_commands
         self.node: Node = None
 
@@ -97,7 +99,6 @@ class Client:
                 CLI.message_ok("CONNECTED", print_func=self.__print_thread)
                 return False
             else:
-                # CLI.message_error("INIT FAILED", print_func=self.__print_thread)
                 self.os_set_IP(ip=str(self.node.IP))
                 return False
 
@@ -112,11 +113,12 @@ class Client:
         if message == ProtocolMethod.EXIT:
             return self.disconnect(state=message.state)
 
-        if self.custom_logic is not None:
-            return self.custom_logic(self, self.sock, message)
 
-        if not is_receiving:
-            self.__send_data(message)
+        if self.receive_hook is not None and is_receiving:
+            return self.receive_hook(self, self.sock, message)
+        
+        if self.send_hook is not None and not is_receiving:
+            return self.send_hook(self, self.sock, message)
 
         return False
 
