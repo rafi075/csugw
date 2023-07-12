@@ -475,6 +475,28 @@ class Server:
                     "INVALID CLIENT INDEX", print_func=self.__print_thread
                 )
 
+
+    def __start_threads(self):
+        """Starts the threads for receiving and command line handling."""
+        self.__threads.extend(
+            [
+                threading.Thread(target=self.__receive),
+                threading.Thread(target=self.__command_line),
+            ]
+        )
+        for thread in self.__threads:
+            thread.start()
+
+    def __join_threads(self):
+        """Joins the threads with exception handling."""
+        for thread in self.__threads:
+            try:
+                thread.join()
+            except KeyboardInterrupt:
+                break
+            except Exception as e:
+                CLI.message_error("Failure Joining Threads", print_func=self.__print_thread)
+
     def run(self):
         CLI.clear_terminal()
         self.__init_config()
@@ -488,22 +510,8 @@ class Server:
             print_func=self.__print_thread,
         )
         self.sock.listen()
-        self.__threads.extend(
-            [
-                threading.Thread(target=self.__receive),
-                threading.Thread(target=self.__command_line),
-            ]
-        )
-
-        [thread.start() for thread in self.__threads]
-        for thread in self.__threads:
-            try:
-                thread.join()
-            except KeyboardInterrupt:
-                break
-            except Exception as e:
-                CLI.message_error("SERVER ERROR", print_func=self.__print_thread)
-                print(e)
+        self.__start_threads()
+        self.__join_threads()
 
     def show_help_menu(self):
         from cli_commands import CLI_DEFAULT_COMMANDS
