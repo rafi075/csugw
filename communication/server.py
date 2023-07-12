@@ -230,27 +230,33 @@ class Server:
         client_ip = str(client.getpeername()[0])
         # Check if client is returning from configuration reboot
         # Or client is already optimally configured
-        if self.awaiting_connection is not None or client_ip == self.__config_content_queue[0]["IP"]:
-            if self.awaiting_connection is not None and client_ip == str(self.awaiting_connection.IP):
+        already_configured = client_ip == self.__config_content_queue[0]["IP"]
+        being_configured = self.awaiting_connection is not None and client_ip == str(self.awaiting_connection.IP)
+
+        if already_configured or being_configured:
+            if being_configured:
                 self.awaiting_connection = None
-                client_node = Node(client, config_data=self.__config_last_entry)
-                self.__clients.append(client_node)
+                self.__config_last_entry = self.__config_content_queue.pop(0)
 
-                init.state = ProtocolState.SUCCESS
-                init.content = ""
-                self.__send_data(client, init)
 
-                CLI.message_ok(
-                    f"CLIENT CONNECTED: {str(client_node.network_string)}",
-                    print_func=self.__print_thread,
-                )
-                self.show_clients()
-                return client_node
-            else:
-                CLI.message_error(
-                    "EITHER CLIENT FAILED TO CONFIG OR MULTIPLE CLIENTS STARTED",
-                    print_func=self.__print_thread,
-                )
+            client_node = Node(client, config_data=self.__config_last_entry)
+            self.__clients.append(client_node)
+
+            init.state = ProtocolState.SUCCESS
+            init.content = ""
+            self.__send_data(client, init)
+
+            CLI.message_ok(
+                f"CLIENT CONNECTED: {str(client_node.network_string)}",
+                print_func=self.__print_thread,
+            )
+            self.show_clients()
+            return client_node
+        # else:
+        #     CLI.message_error(
+        #         "EITHER CLIENT FAILED TO CONFIG OR MULTIPLE CLIENTS STARTED",
+        #         print_func=self.__print_thread,
+        #     )
 
         if len(self.__clients) == self.max_clients:
             CLI.message_error("MAX CLIENTS CONNECTED", print_func=self.__print_thread)
