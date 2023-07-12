@@ -230,8 +230,12 @@ class Server:
         client_ip = str(client.getpeername()[0])
         # Check if client is returning from configuration reboot
         # Or client is already optimally configured
-        already_configured = client_ip == self.__config_content[len(self.__clients)]["IP"]
-        being_configured = self.awaiting_connection is not None and client_ip == str(self.awaiting_connection.IP)
+        already_configured = (
+            client_ip == self.__config_content[len(self.__clients)]["IP"]
+        )
+        being_configured = self.awaiting_connection is not None and client_ip == str(
+            self.awaiting_connection.IP
+        )
 
         if already_configured or being_configured:
             if being_configured:
@@ -240,8 +244,12 @@ class Server:
             # if already_configured:
             #     self.__config_last_entry = self.__config_content_queue.pop(0)
 
-
-            client_node = Node(client, config_data=self.__config_last_entry)
+            client_node = Node(
+                client,
+                config_data=self.__config_content[len(self.__clients)]["IP"]
+                if already_configured
+                else self.__config_last_entry,
+            )
             self.__clients.append(client_node)
 
             init.state = ProtocolState.SUCCESS
@@ -399,9 +407,9 @@ class Server:
     def is_socket_connected(sock: socket.socket) -> bool:
         try:
             if sys.platform != "win32":
-                sock.send(b'', socket.MSG_DONTWAIT)
+                sock.send(b"", socket.MSG_DONTWAIT)
             else:
-                sock.send(b'', socket.MSG_DONTROUTE)
+                sock.send(b"", socket.MSG_DONTROUTE)
         except BlockingIOError:
             return True
         except BrokenPipeError:
@@ -415,7 +423,9 @@ class Server:
         return False
 
     def close_connection(self, connection: socket.socket or Node):
-        sock:socket.socket = connection.socket if type(connection) is Node else connection
+        sock: socket.socket = (
+            connection.socket if type(connection) is Node else connection
+        )
         if Server.is_socket_connected(sock):
             try:
                 # sock.shutdown(socket.SHUT_RDWR)
@@ -493,7 +503,6 @@ class Server:
                 # client.close()
                 self.close_connection(client)
 
-
         self.__exit_event.set()
 
         with self.__locks["thread"]:
@@ -567,7 +576,6 @@ class Server:
             CLI.message_error("Failed to initialize config.")
             return
 
-    
         CLI.message_ok(
             f"SERVER STARTED {self.host}:{self.port}", print_func=self.__print_thread
         )
