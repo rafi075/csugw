@@ -55,7 +55,6 @@ class Server:
         # self.sock.settimeout(1)
         # self.sock.listen()
         self.__initialize_socket()
-        self.running = True
 
         self.custom_commands = [] if custom_commands is None else custom_commands
         self.send_hook = send_hook
@@ -151,7 +150,6 @@ class Server:
                 self.__print_thread(traceback.format_exc())
                 self.sock.close()
                 self.__exit_event.set()
-                self.running = False
                 break
 
     def __parse_command(self, user_input: str):
@@ -329,10 +327,12 @@ class Server:
 
         schema = self.__load_json_file(schema_path)
         if schema is None:
+            CLI.message_error(f"Schema file '{schema_path}' not found.")
             return
 
         data = self.__load_json_file(file_path)
         if data is None or not self.__validate_schema(data, schema):
+            CLI.message_error(f"Config file '{file_path}' not found or invalid.")
             return
 
         self.config_content = list(data["Nodes"])
@@ -443,7 +443,6 @@ class Server:
             for client in self.__clients:
                 client.close()
 
-        self.running = False
         self.__exit_event.set()
 
         with self.__locks["thread"]:
@@ -492,7 +491,10 @@ class Server:
             ]
         )
         for thread in self.__threads:
-            thread.start()
+            try:
+                thread.start()
+            except KeyboardInterrupt:
+                break
 
     def __join_threads(self):
         """Joins the threads with exception handling."""
@@ -515,7 +517,7 @@ class Server:
         )
 
         CLI.message_caution(
-            f"Configured For MAX {len(self.__config_content)} clients.",
+            f"Configured For MAX {self.max_clients} clients.",
             print_func=self.__print_thread,
         )
         self.sock.listen()
