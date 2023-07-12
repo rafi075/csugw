@@ -36,7 +36,12 @@ DEFAULT_GATEWAY = "10.1.1.1"
 
 class Server:
     def __init__(
-        self, host=DEFAULT_GATEWAY, port=5000, custom_logic=None, custom_commands=None
+        self,
+        host=DEFAULT_GATEWAY,
+        port=5000,
+        send_hook = None,
+        receive_hook = None,
+        custom_commands=None,
     ):
         self.host = host
         self.port = port
@@ -52,7 +57,8 @@ class Server:
         self.running = True
 
         self.custom_commands = [] if custom_commands is None else custom_commands
-        self.custom_logic = custom_logic
+        self.send_hook = send_hook
+        self.receive_hook = receive_hook
 
         self.__exit_event = threading.Event()
         self.__locks = {
@@ -83,9 +89,13 @@ class Server:
             self.__send_data(client, message)
             return False
 
-        if self.custom_logic is not None:
-            return self.custom_logic(self, client, message)
+        if self.receive_hook is not None and is_receiving:
+            return self.receive_hook(self, client, message)
 
+        if self.send_hook is not None and not is_receiving:
+            return self.send_hook(self, client, message)
+
+        # If no other cases have been hit, send the message to the client
         if not is_receiving:
             if message[ProtocolType] == ProtocolType.BROADCAST:
                 self.broadcast(f"{message}", exclude=client)

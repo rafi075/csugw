@@ -1,4 +1,5 @@
 import argparse
+from random import randint
 import sys
 sys.path.append("..")
 from server import Server
@@ -6,7 +7,7 @@ import lib_cli as CLI
 from protocol import *
 
 DEFAULT_GATEWAY = "10.1.1.1"
-bDoubled = False
+
 def program_arguments():
     parser = argparse.ArgumentParser(
         description="This is a program that accepts IP address and Port number"
@@ -22,19 +23,24 @@ def program_arguments():
     return parser.parse_args()
 
 
-def custom_logic(obj: Server, client: Node, message: Protocol or str):
-    global bDoubled
-    CLI.message_ok("CUSTOM LOGIC", colr="BlueViolet")
+def send_hook(server: Server, client: Node, message: Protocol or str):
+    CLI.message_ok("Send Hook", colr="BlueViolet")
 
-    if message == ProtocolMethod.DEMO and not bDoubled:
+    if message == ProtocolMethod.DEMO:
+        message.content = f"{randint(1, 100)}"
+
+    server.send(client, message)
+
+    return False
+
+
+def receive_hook(server: Server, client: Node, message: Protocol or str):
+    CLI.message_ok("Receive Hook", colr="BlueViolet")
+
+    if message == ProtocolMethod.DEMO:
         # Show custom logic is being ran
-        CLI.message_ok("DEMO", colr="BlueViolet")
-
-        # Send a number to the client
-        message.content = "10"
-        obj.send(client, message)
-        
-        bDoubled = True
+        CLI.message_ok(f"DOUBLED: {message.content}", colr="BlueViolet")
+    
 
     return False
 
@@ -44,7 +50,8 @@ args = program_arguments()
 
 server = Server(host=args.IPv4Address, 
                 port=args.Port, 
-                custom_logic=custom_logic)
+                send_hook=send_hook,
+                receive_hook=receive_hook)
 
 
 server.run()

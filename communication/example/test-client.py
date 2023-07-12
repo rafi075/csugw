@@ -19,26 +19,28 @@ def program_arguments():
     return parser.parse_args()
 
 
-def custom_logic(obj: Client, client: Node, message: Protocol or str):
-    global bDoubled
-    CLI.message_ok("CUSTOM LOGIC", colr="BlueViolet")
+
+def send_hook(client: Client, obj: socket.socket, message: Protocol or str):
+    CLI.message_ok("Send Hook", colr="BlueViolet")
+    client.send(message)
+    return False
+
+
+
+def receive_hook(client: Client, obj: socket.socket, message: Protocol or str):
+    CLI.message_ok("Receive Hook", colr="BlueViolet")
 
     # if attack_lib():
     #     return False
 
-    if message == ProtocolMethod.DEMO and not bDoubled:
-        # Show custom logic is being ran
-        CLI.message_ok(f"DEMO {message.content}", colr="BlueViolet")
-
+    if message == ProtocolMethod.DEMO:
         # Double the number received
         number = int(message.content)
         response = number * 2
         message.content= f"{response}"
 
         # Send the doubled number back to the client
-        obj.send(message)
-
-        bDoubled = True
+        client.send(message)
 
     return False
 
@@ -48,6 +50,7 @@ args = program_arguments()
 client = Client(args.id, 
                 host=args.IPv4Address, 
                 port=args.Port, 
-                custom_logic=custom_logic)
+                send_hook=send_hook,
+                receive_hook=receive_hook)
 
 client.run()
