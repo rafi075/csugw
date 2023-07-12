@@ -39,8 +39,8 @@ class Server:
         self,
         host=DEFAULT_GATEWAY,
         port=5000,
-        send_hook = None,
-        receive_hook = None,
+        send_hook=None,
+        receive_hook=None,
         custom_commands=None,
     ):
         self.host = host
@@ -50,11 +50,11 @@ class Server:
         self.__config_last_entry = None
         self.__clients = []
         self.__threads = []
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.bind((self.host, self.port))
-        self.sock.settimeout(1)
-        self.sock.listen()
-        self.running = True
+        # self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # self.sock.bind((self.host, self.port))
+        # self.sock.settimeout(1)
+        # self.sock.listen()
+        self.__initialize_socket()
 
         self.custom_commands = [] if custom_commands is None else custom_commands
         self.send_hook = send_hook
@@ -67,11 +67,24 @@ class Server:
             "thread": threading.Lock(),
         }
 
+        # self.dir_path = os.path.dirname(os.path.realpath(__file__))
+        # self.config_path = os.path.join(self.dir_path, "config.json")
+        # self.config_schema_path = os.path.join(self.dir_path, "config_schema.json")
+
+        self.__initialize_config_paths()
+        self.max_clients = 0
+        self.awaiting_connection = None
+
+    def __initialize_socket(self):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.bind((self.host, self.port))
+        self.sock.settimeout(1)
+        self.sock.listen()
+
+    def __initialize_config_paths(self):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
         self.config_path = os.path.join(self.dir_path, "config.json")
         self.config_schema_path = os.path.join(self.dir_path, "config_schema.json")
-        self.max_clients = 0
-        self.awaiting_connection = None
 
     def __process_message(self, client, message: Protocol, is_receiving=False):
         if not message:
@@ -137,36 +150,43 @@ class Server:
                 self.__print_thread(traceback.format_exc())
                 self.sock.close()
                 self.__exit_event.set()
-                self.running = False
                 break
 
-    def __commands(self, user_input: str):
+    def __parse_command(self, user_input: str):
+        input_segments = user_input.split(" ")
+        command_name = input_segments[0]
+        command_args = input_segments[1:]
+        return command_name, command_args
+
+    def __execute_command(self, command_name, command_args):
         from cli_commands import CLI_DEFAULT_COMMANDS
 
-        input_segments = user_input.split(" ")
         for command in self.custom_commands + CLI_DEFAULT_COMMANDS:
-            if input_segments[0] in command["Commands"]:
+            if command_name in command["Commands"]:
                 function = command["Function"]
-                if hasattr(function, "__name__"):
-                    need_self = function.__name__ in dir(self.__class__)
-                else:
-                    if function in dir(self.__class__):
-                        need_self = True
-                        function = getattr(self.__class__, function)
-                    else:
-                        need_self = False
+                need_self = hasattr(function, "__name__") and function.__name__ in dir(
+                    self.__class__
+                )
+                if not need_self and function in dir(self.__class__):
+                    need_self = True
+                    function = getattr(self.__class__, function)
                 if command["Parameters"] > 0:
                     return (
-                        function(self, *input_segments[1:])
+                        function(self, *command_args)
                         if need_self
-                        else function(*input_segments[1:])
+                        else function(*command_args)
                     )
                 else:
                     return function(self) if need_self else function()
-        else:
-            # print(f"Command '{input_segments}' not found.")
+        return None
+
+    def __commands(self, user_input: str):
+        command_name, command_args = self.__parse_command(user_input)
+        result = self.__execute_command(command_name, command_args)
+        if result is None:
+            # print(f"Command '{user_input}' not found.")
             return True
-        return "VOID"
+        return result
 
     def __handle_client(self, client: Node):
         while not self.__exit_event.is_set():
@@ -302,36 +322,44 @@ class Server:
         return message
 
     def __init_config(self, file_path=None, schema_path=None):
-        try:
-            with open(
-                self.config_schema_path if schema_path is None else schema_path, "r"
-            ) as f:
-                schema = json.load(f)
-        except FileNotFoundError:
-            print(f"The file '{schema_path}' does not exist.")
-        except json.JSONDecodeError:
-            print(f"The file could not be parsed as JSON.")
+        schema_path = schema_path or self.config_schema_path
+        file_path = file_path or self.config_path
 
+        schema = self.__load_json_file(schema_path)
+        if schema is None:
+            CLI.message_error(f"Schema file '{schema_path}' not found.")
+            return
+
+        data = self.__load_json_file(file_path)
+        if data is None or not self.__validate_schema(data, schema):
+            CLI.message_error(f"Config file '{file_path}' not found or invalid.")
+            return
+
+        self.__config_content = list(data["Nodes"])
+        self.__config_content_queue = list(data["Nodes"])
+        self.max_clients = len(self.__config_content)
+
+    def __load_json_file(self, file_path):
         try:
-            with open(self.config_path if file_path is None else file_path, "r") as f:
-                data = json.load(f)
-                jsonschema.validate(instance=data, schema=schema)
-                self.__config_content = list(data["Nodes"])
-                self.__config_content_queue = list(data["Nodes"])
-                self.max_clients = len(self.__config_content)
+            with open(file_path, "r") as file:
+                data = json.load(file)
+            return data
         except FileNotFoundError:
-            print(f"The file '{file_path}' does not exist.")
+            CLI.message_error(f"File '{file_path}' not found.")
+            return None
         except json.JSONDecodeError:
-            print(f"The file could not be parsed as JSON.")
+            CLI.message_error(f"File '{file_path}' could not be parsed as JSON.")
+            return None
+
+    def __validate_schema(self, data, schema):
+        try:
+            jsonschema.validate(instance=data, schema=schema)
         except jsonschema.exceptions.ValidationError:
-            print(
-                f"The file '{file_path}' does not adhere to the configuration schema defined in {schema_path}."
-            )
+            CLI.message_error(f"Data does not adhere to the configuration schema.")
+            return False
+        return True
 
     def pop_config(self, socket: socket) -> Node:
-        def default(data, key, default):
-            return data[key] if key in data else default
-
         if len(self.__config_content_queue) > 0:
             data = self.__config_content_queue.pop(0)
             self.__config_last_entry = data
@@ -392,13 +420,13 @@ class Server:
             pass
 
     def broadcast(self, message, exclude=None):
-        if exclude and exclude in self.__clients and len(self.__clients) == 1:
+        if message == ProtocolMethod.INIT:
             return
-        if message != Protocols.INITIALIZE:
-            with self.__locks["clients"]:
-                for client in self.__clients:
-                    if exclude != client:
-                        self.__send_data(client, message)
+
+        with self.__locks["clients"]:
+            for client in self.__clients:
+                if exclude != client:
+                    self.__send_data(client, message)
 
     def shutdown(self):
         message = Protocol(
@@ -415,7 +443,6 @@ class Server:
             for client in self.__clients:
                 client.close()
 
-        self.running = False
         self.__exit_event.set()
 
         with self.__locks["thread"]:
@@ -455,6 +482,32 @@ class Server:
                     "INVALID CLIENT INDEX", print_func=self.__print_thread
                 )
 
+    def __start_threads(self):
+        """Starts the threads for receiving and command line handling."""
+        self.__threads.extend(
+            [
+                threading.Thread(target=self.__receive),
+                threading.Thread(target=self.__command_line),
+            ]
+        )
+        for thread in self.__threads:
+            try:
+                thread.start()
+            except KeyboardInterrupt:
+                break
+
+    def __join_threads(self):
+        """Joins the threads with exception handling."""
+        for thread in self.__threads:
+            try:
+                thread.join()
+            except KeyboardInterrupt:
+                break
+            except Exception as e:
+                CLI.message_error(
+                    "Failure Joining Threads", print_func=self.__print_thread
+                )
+
     def run(self):
         CLI.clear_terminal()
         self.__init_config()
@@ -464,26 +517,12 @@ class Server:
         )
 
         CLI.message_caution(
-            f"Configured For MAX {len(self.__config_content)} clients.",
+            f"Configured For MAX {self.max_clients} clients.",
             print_func=self.__print_thread,
         )
         self.sock.listen()
-        self.__threads.extend(
-            [
-                threading.Thread(target=self.__receive),
-                threading.Thread(target=self.__command_line),
-            ]
-        )
-
-        [thread.start() for thread in self.__threads]
-        for thread in self.__threads:
-            try:
-                thread.join()
-            except KeyboardInterrupt:
-                break
-            except Exception as e:
-                CLI.message_error("SERVER ERROR", print_func=self.__print_thread)
-                print(e)
+        self.__start_threads()
+        self.__join_threads()
 
     def show_help_menu(self):
         from cli_commands import CLI_DEFAULT_COMMANDS
