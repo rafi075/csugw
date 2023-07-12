@@ -236,6 +236,7 @@ class Server:
         if already_configured or being_configured:
             if being_configured:
                 self.awaiting_connection = None
+            if already_configured:
                 self.__config_last_entry = self.__config_content_queue.pop(0)
 
 
