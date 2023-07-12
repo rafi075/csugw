@@ -392,7 +392,7 @@ class Server:
             if sys.platform != "win32":
                 sock.send(b'', socket.MSG_DONTWAIT)
             else:
-                sock.send(b'')
+                sock.send(b'', socket.MSG_DONTROUTE)
         except BlockingIOError:
             return True
         except BrokenPipeError:
@@ -400,6 +400,8 @@ class Server:
         except ConnectionAbortedError:
             return False
         except ConnectionResetError:
+            return False
+        except OSError:
             return False
         return False
 
