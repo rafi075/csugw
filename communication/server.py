@@ -231,7 +231,7 @@ class Server:
         # Check if client is returning from configuration reboot
         # Or client is already optimally configured
         if self.awaiting_connection is not None or client_ip == self.__config_content_queue[0]["IP"]:
-            if client_ip == str(self.awaiting_connection.IP):
+            if self.awaiting_connection is not None and client_ip == str(self.awaiting_connection.IP):
                 self.awaiting_connection = None
                 client_node = Node(client, config_data=self.__config_last_entry)
                 self.__clients.append(client_node)
