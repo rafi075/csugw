@@ -316,36 +316,42 @@ class Server:
         return message
 
     def __init_config(self, file_path=None, schema_path=None):
-        try:
-            with open(
-                self.config_schema_path if schema_path is None else schema_path, "r"
-            ) as f:
-                schema = json.load(f)
-        except FileNotFoundError:
-            print(f"The file '{schema_path}' does not exist.")
-        except json.JSONDecodeError:
-            print(f"The file could not be parsed as JSON.")
+        schema_path = schema_path or self.config_schema_path
+        file_path = file_path or self.config_path
 
+        schema = self.__load_json_file(schema_path)
+        if schema is None:
+            return
+
+        data = self.__load_json_file(file_path)
+        if data is None or not self.__validate_schema(data, schema):
+            return
+
+        self.config_content = list(data["Nodes"])
+        self.config_content_queue = list(data["Nodes"])
+        self.max_clients = len(self.config_content)
+
+    def __load_json_file(self, file_path):
         try:
-            with open(self.config_path if file_path is None else file_path, "r") as f:
-                data = json.load(f)
-                jsonschema.validate(instance=data, schema=schema)
-                self.__config_content = list(data["Nodes"])
-                self.__config_content_queue = list(data["Nodes"])
-                self.max_clients = len(self.__config_content)
+            with open(file_path, "r") as file:
+                data = json.load(file)
+            return data
         except FileNotFoundError:
-            print(f"The file '{file_path}' does not exist.")
+            CLI.message_error(f"File '{file_path}' not found.")
+            return None
         except json.JSONDecodeError:
-            print(f"The file could not be parsed as JSON.")
+            CLI.message_error(f"File '{file_path}' could not be parsed as JSON.")
+            return None
+
+    def __validate_schema(self, data, schema):
+        try:
+            jsonschema.validate(instance=data, schema=schema)
         except jsonschema.exceptions.ValidationError:
-            print(
-                f"The file '{file_path}' does not adhere to the configuration schema defined in {schema_path}."
-            )
+            CLI.message_error(f"Data does not adhere to the configuration schema.")
+            return False
+        return True
 
     def pop_config(self, socket: socket) -> Node:
-        def default(data, key, default):
-            return data[key] if key in data else default
-
         if len(self.__config_content_queue) > 0:
             data = self.__config_content_queue.pop(0)
             self.__config_last_entry = data
@@ -406,13 +412,13 @@ class Server:
             pass
 
     def broadcast(self, message, exclude=None):
-        if exclude and exclude in self.__clients and len(self.__clients) == 1:
+        if message == ProtocolMethod.INIT:
             return
-        if message != Protocols.INITIALIZE:
-            with self.__locks["clients"]:
-                for client in self.__clients:
-                    if exclude != client:
-                        self.__send_data(client, message)
+        
+        with self.__locks["clients"]:
+            for client in self.__clients:
+                if exclude != client:
+                    self.__send_data(client, message)
 
     def shutdown(self):
         message = Protocol(
