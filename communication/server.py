@@ -50,10 +50,11 @@ class Server:
         self.__config_last_entry = None
         self.__clients = []
         self.__threads = []
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.bind((self.host, self.port))
-        self.sock.settimeout(1)
-        self.sock.listen()
+        # self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # self.sock.bind((self.host, self.port))
+        # self.sock.settimeout(1)
+        # self.sock.listen()
+        self.__initialize_socket()
         self.running = True
 
         self.custom_commands = [] if custom_commands is None else custom_commands
@@ -67,11 +68,24 @@ class Server:
             "thread": threading.Lock(),
         }
 
+        # self.dir_path = os.path.dirname(os.path.realpath(__file__))
+        # self.config_path = os.path.join(self.dir_path, "config.json")
+        # self.config_schema_path = os.path.join(self.dir_path, "config_schema.json")
+
+        self.__initialize_config_paths()
+        self.max_clients = 0
+        self.awaiting_connection = None
+
+    def __initialize_socket(self):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.bind((self.host, self.port))
+        self.sock.settimeout(1)
+        self.sock.listen()
+
+    def __initialize_config_paths(self):
         self.dir_path = os.path.dirname(os.path.realpath(__file__))
         self.config_path = os.path.join(self.dir_path, "config.json")
         self.config_schema_path = os.path.join(self.dir_path, "config_schema.json")
-        self.max_clients = 0
-        self.awaiting_connection = None
 
     def __process_message(self, client, message: Protocol, is_receiving=False):
         if not message:
