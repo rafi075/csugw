@@ -30,12 +30,12 @@ def send_hook(server: Server, client: Node, message: Protocol or str):
         message.content = f"{randint(1, 100)}"
 
     server.send(client, message)
-    
+
     return False
 
 
 def receive_hook(server: Server, client: Node, message: Protocol or str):
-    CLI.message_ok("CUSTOM LOGIC", colr="BlueViolet")
+    CLI.message_ok("Receive Hook", colr="BlueViolet")
 
     if message == ProtocolMethod.DEMO:
         # Show custom logic is being ran

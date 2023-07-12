@@ -34,9 +34,6 @@ def receive_hook(client: Client, obj: socket.socket, message: Protocol or str):
     #     return False
 
     if message == ProtocolMethod.DEMO:
-        # Show custom logic is being ran
-        # CLI.message_ok(f"GOT {message.content}", colr="BlueViolet")
-
         # Double the number received
         number = int(message.content)
         response = number * 2
