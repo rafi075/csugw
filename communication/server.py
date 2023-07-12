@@ -149,7 +149,7 @@ class Server:
                 self.__print_thread(err)
                 self.__print_thread(traceback.format_exc())
                 # self.sock.close()
-                Server.close_connection(client)
+                self.close_connection(self.sock)
                 self.__exit_event.set()
                 break
 
@@ -254,7 +254,7 @@ class Server:
         if len(self.__clients) == self.max_clients:
             CLI.message_error("MAX CLIENTS CONNECTED", print_func=self.__print_thread)
             # client.close()
-            Server.close_connection(client)
+            self.close_connection(client)
 
             return None
 
@@ -271,7 +271,7 @@ class Server:
         if response == ProtocolMethod.EXIT:
             # client.shutdown(0)
             # client.close()
-            Server.close_connection(client)
+            self.close_connection(client)
 
             CLI.message_error("CLIENT DISCONNECTED", print_func=self.__print_thread)
             return None
@@ -400,13 +400,15 @@ class Server:
             return False
         return False
 
-    @staticmethod
-    def close_connection(connection: socket.socket or Node):
+    def close_connection(self, connection: socket.socket or Node):
         sock:socket.socket = connection.socket if type(connection) is Node else connection
         if Server.is_socket_connected(sock):
             try:
                 # sock.shutdown(socket.SHUT_RDWR)
                 sock.close()
+
+                if type(connection) is Node and connection in self.__clients:
+                    self.__clients.remove(connection)
             except:
                 pass
 
@@ -432,7 +434,7 @@ class Server:
                     )
                     show_message()
                     # client.close()
-                    Server.close_connection(client)
+                    self.close_connection(client)
 
             elif state == ProtocolState.DEFAULT:
                 # Logic before disconnecting the client goes here!
@@ -447,7 +449,7 @@ class Server:
                     self.__clients.remove(client)
                     show_message()
                     # client.close()
-                    Server.close_connection(client)
+                    self.close_connection(client)
 
         except:
             pass
@@ -475,7 +477,7 @@ class Server:
         with self.__locks["clients"]:
             for client in self.__clients:
                 # client.close()
-                Server.close_connection(client)
+                self.close_connection(client)
 
 
         self.__exit_event.set()
@@ -487,7 +489,7 @@ class Server:
 
         # self.sock.shutdown(socket.SHUT_RDWR)
         # self.sock.close()
-        Server.close_connection(client)
+        self.close_connection(client)
         CLI.message_error("SERVER SHUTDOWN", print_func=self.__print_thread)
 
     def show_clients(self):
