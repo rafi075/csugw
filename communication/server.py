@@ -335,9 +335,9 @@ class Server:
             CLI.message_error(f"Config file '{file_path}' not found or invalid.")
             return
 
-        self.config_content = list(data["Nodes"])
-        self.config_content_queue = list(data["Nodes"])
-        self.max_clients = len(self.config_content)
+        self.__config_content = list(data["Nodes"])
+        self.__config_content_queue = list(data["Nodes"])
+        self.max_clients = len(self.__config_content)
 
     def __load_json_file(self, file_path):
         try:
