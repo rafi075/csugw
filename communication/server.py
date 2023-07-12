@@ -39,8 +39,8 @@ class Server:
         self,
         host=DEFAULT_GATEWAY,
         port=5000,
-        send_hook = None,
-        receive_hook = None,
+        send_hook=None,
+        receive_hook=None,
         custom_commands=None,
     ):
         self.host = host
@@ -154,33 +154,41 @@ class Server:
                 self.running = False
                 break
 
-    def __commands(self, user_input: str):
+    def __parse_command(self, user_input: str):
+        input_segments = user_input.split(" ")
+        command_name = input_segments[0]
+        command_args = input_segments[1:]
+        return command_name, command_args
+
+    def __execute_command(self, command_name, command_args):
         from cli_commands import CLI_DEFAULT_COMMANDS
 
-        input_segments = user_input.split(" ")
         for command in self.custom_commands + CLI_DEFAULT_COMMANDS:
-            if input_segments[0] in command["Commands"]:
+            if command_name in command["Commands"]:
                 function = command["Function"]
-                if hasattr(function, "__name__"):
-                    need_self = function.__name__ in dir(self.__class__)
-                else:
-                    if function in dir(self.__class__):
-                        need_self = True
-                        function = getattr(self.__class__, function)
-                    else:
-                        need_self = False
+                need_self = hasattr(function, "__name__") and function.__name__ in dir(
+                    self.__class__
+                )
+                if not need_self and function in dir(self.__class__):
+                    need_self = True
+                    function = getattr(self.__class__, function)
                 if command["Parameters"] > 0:
                     return (
-                        function(self, *input_segments[1:])
+                        function(self, *command_args)
                         if need_self
-                        else function(*input_segments[1:])
+                        else function(*command_args)
                     )
                 else:
                     return function(self) if need_self else function()
-        else:
-            # print(f"Command '{input_segments}' not found.")
+        return None
+
+    def __commands(self, user_input: str):
+        command_name, command_args = self.__parse_command(user_input)
+        result = self.__execute_command(command_name, command_args)
+        if result is None:
+            # print(f"Command '{user_input}' not found.")
             return True
-        return "VOID"
+        return result
 
     def __handle_client(self, client: Node):
         while not self.__exit_event.is_set():
@@ -414,7 +422,7 @@ class Server:
     def broadcast(self, message, exclude=None):
         if message == ProtocolMethod.INIT:
             return
-        
+
         with self.__locks["clients"]:
             for client in self.__clients:
                 if exclude != client:
@@ -475,7 +483,6 @@ class Server:
                     "INVALID CLIENT INDEX", print_func=self.__print_thread
                 )
 
-
     def __start_threads(self):
         """Starts the threads for receiving and command line handling."""
         self.__threads.extend(
@@ -495,7 +502,9 @@ class Server:
             except KeyboardInterrupt:
                 break
             except Exception as e:
-                CLI.message_error("Failure Joining Threads", print_func=self.__print_thread)
+                CLI.message_error(
+                    "Failure Joining Threads", print_func=self.__print_thread
+                )
 
     def run(self):
         CLI.clear_terminal()
