@@ -31,7 +31,6 @@ class ProtocolMethod(Enum):
     DEMO = "DEMO"
 
 
-
 class Field(Enum):
     ID = "ID"
     TYPE = "TYPE"
