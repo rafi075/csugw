@@ -249,7 +249,7 @@ class Client:
     def __send_data(self, message, sign: bool = True, encoding: str = "ascii"):
         if type(message) is Protocol:
             if sign:
-                message.id = self.node.ID
+                message.id = self.id
             message = message.to_network(encoding=encoding)
             self.__log_send(message)
             self.sock.send(message)
