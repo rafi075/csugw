@@ -148,7 +148,8 @@ class Server:
                 CLI.message_error("COMMAND LINE ERROR", print_func=self.__print_thread)
                 self.__print_thread(err)
                 self.__print_thread(traceback.format_exc())
-                self.sock.close()
+                # self.sock.close()
+                Server.close_connection(client)
                 self.__exit_event.set()
                 break
 
@@ -484,8 +485,9 @@ class Server:
                 if thread.is_alive() and thread != threading.current_thread():
                     thread.join()
 
-        self.sock.shutdown(socket.SHUT_RDWR)
-        self.sock.close()
+        # self.sock.shutdown(socket.SHUT_RDWR)
+        # self.sock.close()
+        Server.close_connection(client)
         CLI.message_error("SERVER SHUTDOWN", print_func=self.__print_thread)
 
     def show_clients(self):
