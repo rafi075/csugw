@@ -230,7 +230,7 @@ class Server:
         client_ip = str(client.getpeername()[0])
         # Check if client is returning from configuration reboot
         # Or client is already optimally configured
-        already_configured = len(self.__config_content_queue) > 0 and client_ip == self.__config_content_queue[0]["IP"]
+        already_configured = client_ip == self.__config_content[len(self.__clients)]["IP"]
         being_configured = self.awaiting_connection is not None and client_ip == str(self.awaiting_connection.IP)
 
         if already_configured or being_configured:
