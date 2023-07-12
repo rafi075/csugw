@@ -246,7 +246,7 @@ class Server:
 
             client_node = Node(
                 client,
-                config_data=self.__config_content[len(self.__clients)]["IP"]
+                config_data=self.__config_content[len(self.__clients)]
                 if already_configured
                 else self.__config_last_entry,
             )
