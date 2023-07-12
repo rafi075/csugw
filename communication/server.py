@@ -494,7 +494,7 @@ class Server:
 
         # self.sock.shutdown(socket.SHUT_RDWR)
         # self.sock.close()
-        self.close_connection(client)
+        self.close_connection(self.sock)
         CLI.message_error("SERVER SHUTDOWN", print_func=self.__print_thread)
 
     def show_clients(self):
