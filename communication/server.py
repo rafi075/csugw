@@ -389,7 +389,10 @@ class Server:
     @staticmethod
     def is_socket_connected(sock: socket.socket) -> bool:
         try:
-            sock.send(b'', socket.MSG_DONTWAIT)
+            if sys.platform != "win32":
+                sock.send(b'', socket.MSG_DONTWAIT)
+            else:
+                sock.send(b'')
         except BlockingIOError:
             return True
         except BrokenPipeError:
