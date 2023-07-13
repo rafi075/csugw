@@ -4,6 +4,7 @@ import sys
 sys.path.append("..")
 from server import Server
 import lib_cli as CLI
+from node import Node
 from protocol import *
 
 DEFAULT_GATEWAY = "10.1.1.1"

@@ -1,8 +1,7 @@
 import ipaddress as ip
 import socket
 
-import jsonschema
-from lib_cli import print_array, table, message
+from lib_cli import table, message
 
 DEFAULT_IP = "10.1.1.150"
 DEFAULT_PORT = 5000

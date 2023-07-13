@@ -14,10 +14,9 @@ from protocol import (
     ProtocolState,
     ProtocolMethod,
     ProtocolType,
-    Field,
 )
 
-from node import Node, HelpMenu
+from node import Node
 import lib_cli as CLI
 import select
 import sys
@@ -50,10 +49,7 @@ class Server:
         self.__config_last_entry = None
         self.__clients = []
         self.__threads = []
-        # self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # self.sock.bind((self.host, self.port))
-        # self.sock.settimeout(1)
-        # self.sock.listen()
+
         self.__initialize_socket()
 
         self.custom_commands = [] if custom_commands is None else custom_commands
@@ -66,10 +62,6 @@ class Server:
             "print": threading.Lock(),
             "thread": threading.Lock(),
         }
-
-        # self.dir_path = os.path.dirname(os.path.realpath(__file__))
-        # self.config_path = os.path.join(self.dir_path, "config.json")
-        # self.config_schema_path = os.path.join(self.dir_path, "config_schema.json")
 
         self.__initialize_config_paths()
         self.max_clients = 0
@@ -148,7 +140,7 @@ class Server:
                 CLI.message_error("COMMAND LINE ERROR", print_func=self.__print_thread)
                 self.__print_thread(err)
                 self.__print_thread(traceback.format_exc())
-                # self.sock.close()
+
                 self.close_connection(self.sock)
                 self.__exit_event.set()
                 break
@@ -184,10 +176,7 @@ class Server:
     def __commands(self, user_input: str):
         command_name, command_args = self.__parse_command(user_input)
         result = self.__execute_command(command_name, command_args)
-        if result is None:
-            # print(f"Command '{user_input}' not found.")
-            return True
-        return result
+        return True if result is None else result
 
     def __handle_client(self, client: Node):
         while not self.__exit_event.is_set():
@@ -197,8 +186,6 @@ class Server:
                     if self.__process_message(client, message, is_receiving=True):
                         break
             except Exception as e:
-                # TODO: Exception thrown on DC
-                # Perhaps handle it more gracefully
                 self.disconnect_client(client)
                 break
 
@@ -228,6 +215,7 @@ class Server:
 
         # get ip address from socket named client
         client_ip = str(client.getpeername()[0])
+
         # Check if client is returning from configuration reboot
         # Or client is already optimally configured
         already_configured = (
@@ -265,7 +253,6 @@ class Server:
 
         if len(self.__clients) == self.max_clients:
             CLI.message_error("MAX CLIENTS CONNECTED", print_func=self.__print_thread)
-            # client.close()
             self.close_connection(client)
 
             return None
@@ -281,8 +268,6 @@ class Server:
         response = self.__receive_data(client)
 
         if response == ProtocolMethod.EXIT:
-            # client.shutdown(0)
-            # client.close()
             self.close_connection(client)
 
             CLI.message_error("CLIENT DISCONNECTED", print_func=self.__print_thread)
@@ -423,9 +408,7 @@ class Server:
         )
         if Server.is_socket_connected(sock):
             try:
-                # sock.shutdown(socket.SHUT_RDWR)
                 sock.close()
-
                 if type(connection) is Node and connection in self.__clients:
                     self.__clients.remove(connection)
             except:
@@ -495,7 +478,6 @@ class Server:
 
         with self.__locks["clients"]:
             for client in self.__clients:
-                # client.close()
                 self.close_connection(client)
 
         self.__exit_event.set()
@@ -505,8 +487,6 @@ class Server:
                 if thread.is_alive() and thread != threading.current_thread():
                     thread.join()
 
-        # self.sock.shutdown(socket.SHUT_RDWR)
-        # self.sock.close()
         self.close_connection(self.sock)
         CLI.message_error("SERVER SHUTDOWN", print_func=self.__print_thread)
 

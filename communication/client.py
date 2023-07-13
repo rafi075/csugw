@@ -11,18 +11,14 @@ from random import randrange
 import time
 import traceback
 from api import API
-import jsonschema
 from node import Node
 
 import lib_cli as CLI
 
 from protocol import (
-    Protocols,
     Protocol,
     ProtocolState,
     ProtocolMethod,
-    ProtocolType,
-    Field,
 )
 
 
@@ -50,7 +46,7 @@ class Client:
         self.__print_lock = threading.Lock()
         self.__exit_event = threading.Event()
         self.initialized = False
-        self.sock = None
+        self.sock: socket.socket = None
         self.port = port
         self.host = host
 
@@ -341,10 +337,6 @@ class Client:
     def display_network(self):
         CLI.message_ok(self.__get_socket_address(self.sock))
 
-    # TODO:
-    # Terminate socket connection (maybe?)
-    # reconfigure OS network interface
-    # Re-establish socket connection to server
     def os_set_IP(
         self,
         ip: str,
@@ -395,20 +387,3 @@ if __name__ == "__main__":
     client = Client(client_id, host=args.IPv4Address, port=args.Port)
     client.run()
     exit(0)
-
-
-"""
-TODO:
-- Durning INIT
-    - first connection will have default ip, lets say 10.1.1.250                                done
-    - we need to 
-        - pop config ip                                                                         done
-        - send config ip to client                                                              done
-        - close socket connection                                                               done
-        - client call OS level script to reconfigure network                                    done
-            - assume client will DC here                                                        * talk with Rakibul
-                - if so, need to assess how server will handle reconnection                     *
-                - + error cases? (user error: multiple connections)                             *               
-
-        - reconnect to server                                                                   *          
-"""

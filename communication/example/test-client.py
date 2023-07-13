@@ -1,4 +1,5 @@
 import argparse
+import socket
 import sys
 sys.path.append("..")
 from client import Client

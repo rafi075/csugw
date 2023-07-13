@@ -93,7 +93,6 @@ class API:
         """
         return API.execute(API.EXECUTABLE, API.PATH, "SET", str(tag), str(value))
 
-
     @staticmethod
     def exe_python(path: str, *args) -> str:
         """
@@ -105,7 +104,7 @@ class API:
             str:                The output of the executed CLI program.
         """
         return API.execute("python3", path, *args)
-    
+
     @staticmethod
     def exe_bash(path: str = "", *args) -> str:
         """
@@ -117,7 +116,7 @@ class API:
             str:                The output of the executed CLI program.
         """
         return API.execute("", path, *args)
-    
+
     @staticmethod
     def exe_sh(path: str = "", *args) -> str:
         """

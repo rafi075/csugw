@@ -1,4 +1,3 @@
-import re
 import os
 import time
 from tabulate import tabulate
@@ -128,7 +127,7 @@ def show_help_menu():
 
 
 def show_help_menu_brief():
-    from cli_commands import CLI_SERVER_COMMANDS, CLI_DEFAULT_COMMANDS
+    from cli_commands import CLI_DEFAULT_COMMANDS
 
     create_menu([CLI_DEFAULT_COMMANDS[0]], use_headers=False, pad=80)
 

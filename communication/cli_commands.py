@@ -1,5 +1,5 @@
 from server import Server
-from lib_cli import create_menu, clear_terminal, show_help_menu
+from lib_cli import clear_terminal
 
 
 CLI_SERVER_COMMANDS = [
