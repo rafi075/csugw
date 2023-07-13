@@ -58,7 +58,6 @@ class Client:
         self.__selector_sock = selectors.DefaultSelector()
         self.__selector_input = selectors.DefaultSelector()
 
-
         CLI.message_caution(
             f"Starting Client",
             print_func=self.__print_thread,
@@ -109,10 +108,9 @@ class Client:
         if message == ProtocolMethod.EXIT:
             return self.disconnect(state=message.state)
 
-
         if self.receive_hook is not None and is_receiving:
             return self.receive_hook(self, self.sock, message)
-        
+
         if self.send_hook is not None and not is_receiving:
             return self.send_hook(self, self.sock, message)
 
