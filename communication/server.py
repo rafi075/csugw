@@ -241,8 +241,8 @@ class Server:
             if being_configured:
                 self.awaiting_connection = None
 
-            # if already_configured:
-            #     self.__config_last_entry = self.__config_content_queue.pop(0)
+            if already_configured:
+                self.__config_last_entry = self.__config_content_queue.pop(0)
 
             client_node = Node(
                 client,
