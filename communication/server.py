@@ -240,8 +240,7 @@ class Server:
         if already_configured or being_configured:
             if being_configured:
                 self.awaiting_connection = None
-
-            if already_configured:
+            else:
                 self.__config_last_entry = self.__config_content_queue.pop(0)
 
             client_node = Node(
@@ -262,11 +261,7 @@ class Server:
             )
             self.show_clients()
             return client_node
-        # else:
-        #     CLI.message_error(
-        #         "EITHER CLIENT FAILED TO CONFIG OR MULTIPLE CLIENTS STARTED",
-        #         print_func=self.__print_thread,
-        #     )
+
 
         if len(self.__clients) == self.max_clients:
             CLI.message_error("MAX CLIENTS CONNECTED", print_func=self.__print_thread)
