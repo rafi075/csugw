@@ -148,7 +148,8 @@ class Server:
                 CLI.message_error("COMMAND LINE ERROR", print_func=self.__print_thread)
                 self.__print_thread(err)
                 self.__print_thread(traceback.format_exc())
-                self.sock.close()
+                # self.sock.close()
+                self.close_connection(self.sock)
                 self.__exit_event.set()
                 break
 
@@ -225,34 +226,48 @@ class Server:
             id="Server", method=ProtocolMethod.INIT, state=ProtocolState.REQ_AWK
         )
 
+        # get ip address from socket named client
+        client_ip = str(client.getpeername()[0])
         # Check if client is returning from configuration reboot
-        if self.awaiting_connection is not None:
-            # get ip address from socket named client
-            client_ip = str(client.getpeername()[0])
-            if client_ip == str(self.awaiting_connection.IP):
+        # Or client is already optimally configured
+        already_configured = (
+            client_ip == self.__config_content[len(self.__clients)]["IP"]
+        )
+        being_configured = self.awaiting_connection is not None and client_ip == str(
+            self.awaiting_connection.IP
+        )
+
+        if already_configured or being_configured:
+            if being_configured:
                 self.awaiting_connection = None
-                client_node = Node(client, config_data=self.__config_last_entry)
-                self.__clients.append(client_node)
-
-                init.state = ProtocolState.SUCCESS
-                init.content = ""
-                self.__send_data(client, init)
-
-                CLI.message_ok(
-                    f"CLIENT CONNECTED: {str(client_node.network_string)}",
-                    print_func=self.__print_thread,
-                )
-                self.show_clients()
-                return client_node
             else:
-                CLI.message_error(
-                    "EITHER CLIENT FAILED TO CONFIG OR MULTIPLE CLIENTS STARTED",
-                    print_func=self.__print_thread,
-                )
+                self.__config_last_entry = self.__config_content_queue.pop(0)
+
+            client_node = Node(
+                client,
+                config_data=self.__config_content[len(self.__clients)]
+                if already_configured
+                else self.__config_last_entry,
+            )
+            self.__clients.append(client_node)
+
+            init.state = ProtocolState.SUCCESS
+            init.content = ""
+            self.__send_data(client, init)
+
+            CLI.message_ok(
+                f"CLIENT CONNECTED: {str(client_node.network_string)}",
+                print_func=self.__print_thread,
+            )
+            self.show_clients()
+            return client_node
+
 
         if len(self.__clients) == self.max_clients:
             CLI.message_error("MAX CLIENTS CONNECTED", print_func=self.__print_thread)
-            client.close()
+            # client.close()
+            self.close_connection(client)
+
             return None
 
         client_node = self.pop_config(client)
@@ -266,8 +281,10 @@ class Server:
         response = self.__receive_data(client)
 
         if response == ProtocolMethod.EXIT:
-            client.shutdown(0)
-            client.close()
+            # client.shutdown(0)
+            # client.close()
+            self.close_connection(client)
+
             CLI.message_error("CLIENT DISCONNECTED", print_func=self.__print_thread)
             return None
         elif response == ProtocolMethod.INIT:
@@ -326,18 +343,19 @@ class Server:
         file_path = file_path or self.config_path
 
         schema = self.__load_json_file(schema_path)
-        if schema is None:
+        if not schema:
             CLI.message_error(f"Schema file '{schema_path}' not found.")
             return
 
         data = self.__load_json_file(file_path)
-        if data is None or not self.__validate_schema(data, schema):
+        if not data or not self.__validate_schema(data, schema):
             CLI.message_error(f"Config file '{file_path}' not found or invalid.")
             return
 
         self.__config_content = list(data["Nodes"])
         self.__config_content_queue = list(data["Nodes"])
         self.max_clients = len(self.__config_content)
+        return True
 
     def __load_json_file(self, file_path):
         try:
@@ -346,10 +364,10 @@ class Server:
             return data
         except FileNotFoundError:
             CLI.message_error(f"File '{file_path}' not found.")
-            return None
+            return {}
         except json.JSONDecodeError:
             CLI.message_error(f"File '{file_path}' could not be parsed as JSON.")
-            return None
+            return {}
 
     def __validate_schema(self, data, schema):
         try:
@@ -380,6 +398,39 @@ class Server:
                 return client
         return None
 
+    @staticmethod
+    def is_socket_connected(sock: socket.socket) -> bool:
+        try:
+            if sys.platform != "win32":
+                sock.send(b"", socket.MSG_DONTWAIT)
+            else:
+                sock.send(b"", socket.MSG_DONTROUTE)
+        except BlockingIOError:
+            return True
+        except BrokenPipeError:
+            return False
+        except ConnectionAbortedError:
+            return False
+        except ConnectionResetError:
+            return False
+        except OSError:
+            return False
+        return False
+
+    def close_connection(self, connection: socket.socket or Node):
+        sock: socket.socket = (
+            connection.socket if type(connection) is Node else connection
+        )
+        if Server.is_socket_connected(sock):
+            try:
+                # sock.shutdown(socket.SHUT_RDWR)
+                sock.close()
+
+                if type(connection) is Node and connection in self.__clients:
+                    self.__clients.remove(connection)
+            except:
+                pass
+
     def disconnect_client(self, client: Node, state: ProtocolState = ProtocolState.AWK):
         if client not in self.__clients:
             return
@@ -401,7 +452,8 @@ class Server:
                         Protocol(method=ProtocolMethod.EXIT, state=ProtocolState.AWK),
                     )
                     show_message()
-                    client.close()
+                    # client.close()
+                    self.close_connection(client)
 
             elif state == ProtocolState.DEFAULT:
                 # Logic before disconnecting the client goes here!
@@ -415,7 +467,9 @@ class Server:
                 with self.__locks["clients"]:
                     self.__clients.remove(client)
                     show_message()
-                    client.close()
+                    # client.close()
+                    self.close_connection(client)
+
         except:
             pass
 
@@ -441,7 +495,8 @@ class Server:
 
         with self.__locks["clients"]:
             for client in self.__clients:
-                client.close()
+                # client.close()
+                self.close_connection(client)
 
         self.__exit_event.set()
 
@@ -450,8 +505,9 @@ class Server:
                 if thread.is_alive() and thread != threading.current_thread():
                     thread.join()
 
-        self.sock.shutdown(socket.SHUT_RDWR)
-        self.sock.close()
+        # self.sock.shutdown(socket.SHUT_RDWR)
+        # self.sock.close()
+        self.close_connection(self.sock)
         CLI.message_error("SERVER SHUTDOWN", print_func=self.__print_thread)
 
     def show_clients(self):
@@ -510,7 +566,10 @@ class Server:
 
     def run(self):
         CLI.clear_terminal()
-        self.__init_config()
+
+        if not self.__init_config():
+            CLI.message_error("Failed to initialize config.")
+            return
 
         CLI.message_ok(
             f"SERVER STARTED {self.host}:{self.port}", print_func=self.__print_thread
