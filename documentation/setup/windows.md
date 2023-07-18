@@ -6,6 +6,7 @@
   - [Host Configuration](#host-configuration)
     - [Loopback Adapter Installtion](#loopback-adapter-installtion)
     - [Loopback Adapter Configuration](#loopback-adapter-configuration)
+    - [VMWare Loopback Adapter Configuration](#vmware-loopback-adapter-configuration)
   - [:heavy\_check\_mark: Next Step](#heavy_check_mark-next-step)
 
 
@@ -90,6 +91,13 @@ Configuration of the Windows Host machine. Carefully consider, and take note of 
 8. Click `Ok` to confirm settings
 
 <br>
+
+### VMWare Loopback Adapter Configuration
+
+1. Open GNS3
+2. Goto: `Edit > Settings > VMWare > Advanced local settings`
+3. Click `Configure` and wait for the terminal to close.
+![2023-07-18_10-54](https://github.com/rafi075/csugw/assets/78711391/a9764888-f728-4ddf-9028-4d938e568ba1)
 
 ---
 
