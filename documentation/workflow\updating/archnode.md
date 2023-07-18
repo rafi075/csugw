@@ -5,8 +5,8 @@
 - [Arch Linux Virtual Node](#arch-linux-virtual-node)
   - [Table of Contents](#table-of-contents)
   - [General Information](#general-information)
-  - [Tools](#tools)
   - [Pushing Changes](#pushing-changes)
+  - [Tools](#tools)
 
 ## General Information
 - I have found that using two different copies of the Arch Linux node is ideal for testing and updating. One node should be the `Master` node and should have the ability to connect to the internet. The second node should be a clone of the `Master` node, but should not be connected to the internet as it will be used in GNS3. This practice, while slow, mitigates the risk of numerous seemingly random errors and provides peace of mind as the master node is never changed by experiments within GNS3. 
@@ -24,7 +24,33 @@
       - After cloning the `Master` node to a `Worker` node or `ArchGNS3`, start the node through VMware. Give it a few seconds to startup, then shut it down. This is not strictly necessary, however, historically it has resolved a very inconsistent where the node was not properly configured when started by GNS3. 
 
 
+## Pushing Changes
+- I encourage you to use GitHub to manage your changes to this project as well as to distribute code changes to the master node. In my opinion, resolving the VM internet connection issue will be easier than trying to transfer changes to the master node via USB (issues will likely arise with VMware and Arch Linux). Any mention of changes to this project will assumed to be done through GitHub.
+- Change management in this project is a burden as changes must be distributed to nodes which may or may not be connected to the internet. Below, I will outline the steps I followed to push changes.
+  1. Make changes to the code base on a local branch
+  2. Add changes, Commit changes, and push the branch to GitHub
+    ```bash
+    git add -A
+    git commit -m "Description of changes"
+    git push -u origin branch_name
+    ```
+  3. Open the `Master` node described in [General Information](#general-information)
+     1. The `Master` node may continuiously loop on startup. If this is the case, simply press `ctrl + c` to exit the loop.
+  4. Currently, we have made changes to the `branch_name` branch, however by default, the `Master` node is using the `master` branch. Therefore, we need to update the repository and switch branches:
+    ```bash
+    git fetch
+    git pull
+    git checkout branch_name
+    ```
+  5. Now the `Master` node is using the `branch_name` branch, and has your latest changes.
+  6. "Save" your changes by running `shutdown 0` to shutdown the VM.
+  7. Once the shutdown is complete, clone the `Master` node to create a `Worker` node or `ArchGNS3` node (the name does not matter). Reference [General Information](#general-information) to see how to configure the network devices on these machines.
+  8. Now, open the `Worker` node VM through VMWare. This is a dry run of the node to ensure that the network settings are configured before GNS3 clones the node. Again, this should not be necessary, but it solves a rare issue. Once you see the image below, `ctrl + c` to kill the program and `shutdown 0` to exit the node.
+  
+  ![nodeconf](https://github.com/rafi075/csugw/assets/78711391/3dbcbf85-12f6-4420-8ba1-091ff606c9b6)
+
+  9. Now the `Worker` node is fully configured and loaded with your changes. It is ready to be imported into GNS3 and used in a project.
+
 
 ## Tools
 
-## Pushing Changes
