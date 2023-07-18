@@ -6,6 +6,7 @@
   - [Table of Contents](#table-of-contents)
   - [General Information](#general-information)
   - [Pushing Changes](#pushing-changes)
+    - [Pushing Changes - Bug Collection](#pushing-changes---bug-collection)
   - [Tools](#tools)
 
 ## General Information
@@ -46,11 +47,14 @@
   6. "Save" your changes by running `shutdown 0` to shutdown the VM.
   7. Once the shutdown is complete, clone the `Master` node to create a `Worker` node or `ArchGNS3` node (the name does not matter). Reference [General Information](#general-information) to see how to configure the network devices on these machines.
   8. Now, open the `Worker` node VM through VMWare. This is a dry run of the node to ensure that the network settings are configured before GNS3 clones the node. Again, this should not be necessary, but it solves a rare issue. Once you see the image below, `ctrl + c` to kill the program and `shutdown 0` to exit the node.
-  
+
   ![nodeconf](https://github.com/rafi075/csugw/assets/78711391/3dbcbf85-12f6-4420-8ba1-091ff606c9b6)
 
   9. Now the `Worker` node is fully configured and loaded with your changes. It is ready to be imported into GNS3 and used in a project.
 
+### Pushing Changes - Bug Collection
+> I am by no means an expert on why these happen. I will provide my experience and my assumptions to hopefully help you.
+- 
 
 ## Tools
 
