@@ -10,6 +10,8 @@
       - [Send](#send)
       - [Receive](#receive)
   - [Client](#client)
+      - [Send](#send-1)
+      - [Receive](#receive-1)
 
 ## Demo Feature
 Let's add a `DEMO` feature. For simplicity sake, let's define some steps for what our `DEMO` feature should do:
@@ -177,3 +179,45 @@ def receive_hook(server: Server, client: Node, message: Protocol or str):
 >Please refer to the [client documentation](./codechanges.md#📄-test-client) if you you are not familiar with the `receive_hook()`, `send_hook()`, or the idea of hooking.
 >
 > Encouraged, but not required: a look at the [core of the client](./codechanges.md#📄-client)
+
+Let's start with a [bare bones client and server implementation](./codechanges.md#project-bare-minimum).
+
+#### Send
+Based on the [steps](#demo-feature) for our `DEMO` feature, the client reacts to receiving a message of type `DEMO`. Therefore, we do not need any special logic for sending a `DEMO` message. 
+
+```python
+def send_hook(client: Client, obj: socket.socket, message: Protocol or str):
+    # Just sending the message regardless of 
+    # whether it is a `DEMO` message or not
+    client.send(message)
+    return False
+```
+
+#### Receive
+All the client sided logic for the `DEMO` feature revolved around receiving a message of type `DEMO` from the server. Therefore, we will do everything within the `receive_hook()` function:
+  - Receive the number
+  - Print the initial number
+  - Double the number & print it
+  - Send the doubled number back to the server
+```python
+# WHERE: receive_hook() --> example/test-client.py
+def receive_hook(client: Client, obj: socket.socket, message: Protocol or str):
+    # WHEN: 
+    # Check if the current `message` is of type `DEMO`
+    if message == ProtocolMethod.DEMO:
+        # Receive the number
+        number = int(message.content)
+
+        # Print the initial number
+        CLI.message_ok(f"DEMO: {number}")
+        
+        # Double the number & print it
+        response = number * 2
+        CLI.message_ok(f"DEMO: {response}")
+
+        # Send the doubled number back to the server
+        message.content= f"{response}"
+        client.send(message)
+
+    return False
+```
