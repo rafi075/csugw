@@ -82,8 +82,8 @@ def receive_hook(server: Server, client: Node, message: Protocol or str):
     return False
 
 
-server = Server(
-    host="10.1.1.1", port=5000, send_hook=send_hook, receive_hook=receive_hook
-)
+# server = Server(
+#     host="10.1.1.1", port=5000, send_hook=send_hook, receive_hook=receive_hook
+# )
 
-server.run()
+# server.run()

@@ -6,12 +6,21 @@
   - [Table of Contents](#table-of-contents)
   - [Bare Minimum](#bare-minimum)
   - [:page\_facing\_up: Test Server](#page_facing_up-test-server)
+      - [Send Hook](#send-hook)
+      - [Receive Hook](#receive-hook)
   - [:page\_facing\_up: Test Client](#page_facing_up-test-client)
+      - [Send Hook](#send-hook-1)
+      - [Receive Hook](#receive-hook-1)
+  - [:page\_facing\_up: Protocol](#page_facing_up-protocol)
   - [:page\_facing\_up: Server](#page_facing_up-server)
+      - [Receive Message](#receive-message)
+      - [Process Message](#process-message)
   - [:page\_facing\_up: Client](#page_facing_up-client)
+      - [Receive Message](#receive-message-1)
+      - [Process Message](#process-message-1)
 
 ## Bare Minimum
-When importing the project, if you are working within the repository, you should work in a file structure to:
+When importing the project, if you are working within the repository, you should work in a file structure similar to:
 ```
 ├── csugw
 │  ├── communication
@@ -67,19 +76,115 @@ server.run()
 ```
 
 The example project is only slightly more complicated as it includes command line arguments and rudimentary  function logic.
+On the Windows Host Machine, execute the following in a powershell terminal:
+```powershell
+cd csugw/communication/experimentOne/
+python3.exe osu-server.py
+```
 
 ## [:page_facing_up: Test Server](../../communication/example/test-server.py)
 > These test files demonstrate how you should use this software with an experiment in mind.
 
+#### Send Hook
+```python
+def send_hook(server: Server, client: Node, message: Protocol or str):
+    return False
+```
+
+#### Receive Hook
+```python
+def receive_hook(server: Server, client: Node, message: Protocol or str):
+    return False
+```
+
 ## [:page_facing_up: Test Client](../../communication/example/test-client.py)
 > These test files demonstrate how you should use this software with an experiment in mind.
+#### Send Hook
+```python
+def send_hook(client: Client, obj: socket.socket, message: Protocol or str):
+    return False
+```
 
+#### Receive Hook
+```python
+def receive_hook(client: Client, obj: socket.socket, message: Protocol or str):
+    return False
+```
+
+## [:page_facing_up: Protocol](../../communication/protocol.py)
+> - The snippets below have been simplified for understandability.
+> - This file is critical to the code base, make minimal and thoughtful changes.
 
 ## [:page_facing_up: Server](../../communication/server.py)
-> This file is critical to the code base, make minimal and thoughtful changes.
+> - This file is critical to the code base, make minimal and thoughtful changes.
+> - The snippets below have been simplified for understandability.
+
+#### Receive Message
+```python
+def __receive_data(self, sock, mask):
+    # Receive data from network
+    message = sock.recv(1024).decode("ascii")
+    # Transform data into a protocol
+    message: Protocol = Protocol.from_network(message)
+
+    # Process message
+    # (potentially call receive_hook() from test-client.py)
+    self.__process_message(message, is_receiving=True)
+```
+
+#### Process Message
+```python
+def __process_message(self, message: Protocol, is_receiving=False):
+    if message == ProtocolMethod.EXIT:
+        pass
+    # [...]
+    # If message/command was not a 'default' protocol (INIT, EXIT, etc.)
+    # then process hooks
+    if self.receive_hook is not None and is_receiving:
+        # Calls receive_hook() from test-client.py
+        return self.receive_hook(self, self.sock, message)
+    
+    if self.send_hook is not None and not is_receiving:
+        # Calls send_hook() from test-client.py
+        return self.send_hook(self, self.sock, message)
+
+    return False
+```
 
 
 ## [:page_facing_up: Client](../../communication/client.py)
-> This file is critical to the code base, make minimal and thoughtful changes.
+> - The snippets below have been simplified for understandability.
+> - This file is critical to the code base, make minimal and thoughtful changes.
 
+#### Receive Message
+```python
+def __receive_data(self, sock, mask):
+    # Receive data from network
+    message = sock.recv(1024).decode("ascii")
+    # Transform data into a protocol
+    message: Protocol = Protocol.from_network(message)
+
+    # Process message
+    # (potentially call receive_hook() from test-client.py)
+    self.__process_message(message, is_receiving=True)
+```
+
+#### Process Message
+```python
+def __process_message(self, message: Protocol, is_receiving=False):
+    if message == ProtocolMethod.EXIT:
+        pass
+    # [...]
+    # If message/command was not a 'default' protocol (INIT, EXIT, etc.)
+    # then process hooks
+    if self.receive_hook is not None and is_receiving:
+        # Calls receive_hook() from test-client.py
+        return self.receive_hook(self, self.sock, message)
+    
+    if self.send_hook is not None and not is_receiving:
+        # Calls send_hook() from test-client.py
+        return self.send_hook(self, self.sock, message)
+
+    return False
+```
 
