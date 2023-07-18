@@ -28,6 +28,7 @@
     - [:page_facing_up: VMware Workstation](./documentation/setup/vmplayer.md)
     - [:page_facing_up: GNS3](./documentation/setup/gns3.md)
   - [:file_folder: Workflow / Updating](./documentation/workflow%5Cupdating/) 
+    - [:page_facing_up: Code Base](./documentation/workflow%5Cupdating/codechanges.md)
     - [:page_facing_up: VM Node](./documentation/workflow%5Cupdating/archnode.md)
   
 </div>
