@@ -1,0 +1,7 @@
+# Workflow / Updating
+
+> This section contains information regarding my (Parker Jackim) habits and findings throughout this project. Some practices may be unnecessary or not optimal, however I am listing them in the event that some error you run into is somehow resolved by the way I did something. 
+
+## Table of Contents
+- [:file_folder: Workflow / Updating](./documentation/workflow%5Cupdating/) 
+  - [:page_facing_up: VM Node](./archnode.md)
