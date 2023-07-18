@@ -4,7 +4,8 @@
 ## Table of Contents
 - [Code Base \& Changes](#code-base--changes)
   - [Table of Contents](#table-of-contents)
-  - [Bare Minimum](#bare-minimum)
+  - [Project: Bare Minimum](#project-bare-minimum)
+- [Data Flow](#data-flow)
   - [:page\_facing\_up: Test Server](#page_facing_up-test-server)
       - [Send Hook](#send-hook)
       - [Receive Hook](#receive-hook)
@@ -19,7 +20,7 @@
       - [Receive Message](#receive-message-1)
       - [Process Message](#process-message-1)
 
-## Bare Minimum
+## Project: Bare Minimum
 When importing the project, if you are working within the repository, you should work in a file structure similar to:
 ```
 ├── csugw
@@ -81,6 +82,9 @@ On the Windows Host Machine, execute the following in a powershell terminal:
 cd csugw/communication/experimentOne/
 python3.exe osu-server.py
 ```
+
+# Data Flow
+> This section covers core elements of how this software works. **I recommend that you understand the data flow of the project in order to fully understand how the hooks work and when they are called.**
 
 ## [:page_facing_up: Test Server](../../communication/example/test-server.py)
 > These test files demonstrate how you should use this software with an experiment in mind.
