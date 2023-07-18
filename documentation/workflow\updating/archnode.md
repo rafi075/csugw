@@ -54,7 +54,10 @@
 
 ### Pushing Changes - Bug Collection
 > I am by no means an expert on why these happen. I will provide my experience and my assumptions to hopefully help you.
-- 
+- When importing a new or updated VM into GNS3, an issue can arise where GNS3 seemingly does not use the VM provided by the import process. It seems this is because the new VM uses the same name as a previously imported (then deleted) VM, therefore GNS3 is matching the name with the previous VM. Key takeaway, be cautious of using the same name as a previously imported VM. It is unclear if this is caused by GNS3, VMWare API, or something else. I have not tested whether restarting GNS3 solve this issue.
+- Shutting down an Arch Linux node via the `Shudown` button in VMWare results in some changes not being saved to the disk. To resolve this, always use the `shutdown 0` command instead. This could potentially be the problem if experiment results from GNS3 are not saved to disk of the nodes -- untested.
+- Modifying the `Worker` node to have an internet connection, syncing changes, then reconfiguring the `Worker` node to remove the internet connection can work and save you the need to reimport the VM into GNS3. However, an issue eventually arises where the GNS3 node no longer is up to date with the node in VMWare. I have no idea why this is. If you can make this work, it is a slightly faster method as you do not need to fully clone the master VM and you do not need to reimport the VM into GNS3 for testing.
+- Not a bug, but a potential user error: be sure you know which branch your changes are on, and which branch your nodes are currently using.
 
 ## Tools
 
