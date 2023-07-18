@@ -119,6 +119,59 @@ def receive_hook(client: Client, obj: socket.socket, message: Protocol or str):
 > - The snippets below have been simplified for understandability.
 > - This file is critical to the code base, make minimal and thoughtful changes.
 
+***What is a protocol?*** 
+
+A protocol is similar to a language. For example, the English language is just a collection of mouth noises. However, we have collectively agreed that certain noises have meaning. Using a language is that same as using a protocol; it is agreeing that noises have meaning. The language in use is no different than the protocol in use. When a person communicates using a language another person does not know, it is as if gibberish is being spoken. The same circumstance happens with computers when they communicate. Therefore, we need to define a protocol (language) that contains the relevant 'meaning' for this project.
+
+
+Below is the schema definition of a protocol. A schema is similar to an alphabet or dictionary for a language; essentially the anatomy of the protocol. As you can see, the elements that make up a protocol are all members of the `Field` class, as shown by `Field.TYPE.name`. Therefore, it we wanted to add a timestamp to every network message, we would need to add a `timestamp` attribute to the `Field` class, then to the schema. 
+```python
+DEFAULT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        Field.TYPE.name:      {"type": "string"},
+        Field.ID.name:        {"type": "string"},
+        Field.METHOD.name:    {"type": "string"},
+        Field.BODY.name:      {"type": "string"},
+        Field.STATE.name: {
+            "type": "string",
+            "enum": [state.value for state in ProtocolState],
+        },
+    },
+    "required": [Field.TYPE.name, Field.ID.name, Field.METHOD.name],
+}
+```
+
+Below is the definition of what felids are allowed, and furthermore, what values are allowed for each field type. 
+```python
+class Field(Enum):
+    ID              = "ID"
+    TYPE            = "TYPE"
+    METHOD          = "METHOD"
+    BODY            = "BODY"
+    STATE           = "STATE"
+
+class ProtocolState(Enum):
+    DEFAULT         = "DEFAULT"
+    FAIL            = "FAIL"
+    # [...]
+
+class ProtocolType(Enum):
+    DIRECT          = "DIRECT"
+    BROADCAST       = "BROADCAST"
+
+class ProtocolMethod(Enum):
+    DEFAULT         = "DEFAULT"
+    # [...]
+```
+> If you notice in the schema `{"type": "string"}` indicates that each field in the protocol is a `string` type -- this is true, and the enums defined above are ultimately converted to strings. However, I used this implementation of enum's to hopefully make your development experience easier as you are able to use intellisense to help guide your programming: ![intelisense](https://github.com/rafi075/csugw/assets/78711391/92d58caf-2bd9-440e-a5bc-980a1b86a49a)
+
+The `Protocol` class aims to provide an easy way for you to define and understand network messages in this project as it manages validation, string parsing, and intellisense operations based on the definitions provided above.
+
+I have implemented some basic functionalities around the protocol type definitions above. These protocol components are the baseline and should not be removed without a full understanding of the code base. However, adding new protocol components is a requirement for new features! For a full walkthrough on how to add a feature, follow [this guide](./adding_a_feature.md).
+
+
+
 ## [:page_facing_up: Server](../../communication/server.py)
 > - This file is critical to the code base, make minimal and thoughtful changes.
 > - The snippets below have been simplified for understandability.
