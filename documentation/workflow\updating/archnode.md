@@ -54,10 +54,29 @@
 
 ### Pushing Changes - Bug Collection
 > I am by no means an expert on why these happen. I will provide my experience and my assumptions to hopefully help you.
-- When importing a new or updated VM into GNS3, an issue can arise where GNS3 seemingly does not use the VM provided by the import process. It seems this is because the new VM uses the same name as a previously imported (then deleted) VM, therefore GNS3 is matching the name with the previous VM. Key takeaway, be cautious of using the same name as a previously imported VM. It is unclear if this is caused by GNS3, VMWare API, or something else. I have not tested whether restarting GNS3 solve this issue.
+- :exclamation: When importing a new or updated VM into GNS3, an issue can arise where GNS3 seemingly does not use the VM provided by the import process. It seems this is because the new VM uses the same name as a previously imported (then deleted) VM, therefore GNS3 is matching the name with the previous VM. Key takeaway, be cautious of using the same name as a previously imported VM. It is unclear if this is caused by GNS3, VMWare API, or something else. I have not tested whether restarting GNS3 solve this issue.
 - Shutting down an Arch Linux node via the `Shudown` button in VMWare results in some changes not being saved to the disk. To resolve this, always use the `shutdown 0` command instead. This could potentially be the problem if experiment results from GNS3 are not saved to disk of the nodes -- untested.
 - Modifying the `Worker` node to have an internet connection, syncing changes, then reconfiguring the `Worker` node to remove the internet connection can work and save you the need to reimport the VM into GNS3. However, an issue eventually arises where the GNS3 node no longer is up to date with the node in VMWare. I have no idea why this is. If you can make this work, it is a slightly faster method as you do not need to fully clone the master VM and you do not need to reimport the VM into GNS3 for testing.
 - Not a bug, but a potential user error: be sure you know which branch your changes are on, and which branch your nodes are currently using.
 
 ## Tools
-
+> This section only includes a few tools that I think will be useful for you. There are many otther tools that I have installed on the machine which are also useful but are extra.
+- Custom Scripts:
+    - `enable_network`: a collection of commands to enable internet connectivity via DHCP and NetworkManager
+    - `disable_network`: stops network processes started by `enable_network`. Also modifies startup applications. Network configuration stored in `/root/configuration/ens33.conf`.
+    - `set_hostname name`: sets the hostname of the machine
+    - `set_ip ip interface`: sets the IP address of the network interface (visible via `ifconfig`)
+    - `show_net_traffic`: shows network traffic
+- `git`
+    - `git fetch`: get the latest repository changes
+    - `git pull`: fetches and applies the latest repository changes
+    - `git checkout branch_name`: switch to branch_name
+    - `git checkout -b branch_name`: create a new branch
+    - `git add -A`: add all changes to the current branch
+    - `git commit -m "message"`: commit the additions
+    - `git push -u origin branch_name`: push the current branch to GitHub (required for syncing with other devices)
+- Network Tools:
+    - [iftop](https://man.archlinux.org/man/iftop.8.en)
+    - [nmap](https://man.archlinux.org/man/extra/nmap/nmap.1.en)
+    - ...
+    
