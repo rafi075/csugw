@@ -12,6 +12,7 @@
   - [Client](#client)
       - [Send](#send-1)
       - [Receive](#receive-1)
+  - [Results](#results)
 
 ## Demo Feature
 Let's add a `DEMO` feature. For simplicity sake, let's define some steps for what our `DEMO` feature should do:
@@ -110,7 +111,6 @@ Let's start with a [bare bones client and server implementation](./codechanges.m
 ```python
 from random import randint
 ```
-<br>
 
 #### Send
 Our first step as the server is to create a random number. Where and when will this happen? This somewhat depends on the purpose of the feature being added. However, for `DEMO`, the server is the source of the command, and thus in charge of when the event happens. For simplicity sake, let's have the user trigger the event via a CLI command. 
@@ -221,3 +221,6 @@ def receive_hook(client: Client, obj: socket.socket, message: Protocol or str):
 
     return False
 ```
+
+## Results
+Now, after [pushing your changes](./archnode.md#pushing-changes), starting up your project, and connecting your nodes to the server, you will be able to type `DEMO` in the server console and see the connected nodes respond with numbers. 
