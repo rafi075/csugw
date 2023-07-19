@@ -16,7 +16,7 @@ This document walks through the installation, setup, and configuration of our wo
   - [:page_facing_up: Adding A Feature](./workflow%5Cupdating/adding_a_feature.md)
   - [:page_facing_up: VM Node](./workflow%5Cupdating/archnode.md)
 
-## Setup
+## :heavy_check_mark: Setup
 > Complete the following steps in order
 1. [:page_facing_up: Windows Host](./setup/windows.md)
 2. [:page_facing_up: VMware Workstation](./setup/vmplayer.md)
