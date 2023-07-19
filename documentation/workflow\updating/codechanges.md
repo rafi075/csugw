@@ -177,36 +177,67 @@ I have implemented some basic functionalities around the protocol type definitio
 > - The snippets below have been simplified for understandability.
 
 #### Receive Message
+The `__handle_client` method is ran on a dedicated thread for each client node that connect to the server. It is responsible for handling incoming messages and processing them for each client node.
 ```python
-def __receive_data(self, sock, mask):
+def __handle_client(self, client: Node):
+    # Multi-threaded state
+    while not self.__exit_event.is_set():
+        try:
+            # Checking if the client socket has information 
+            # 'ready' for reading
+            if self.__is_active(client.socket):
+                # Get data from client socket
+                message = self.__receive_data(client.socket)
+                # Process the message 
+                if self.__process_message(client, message, is_receiving=True):
+                    break
+        except Exception as e:
+            self.disconnect_client(client)
+            break
+```
+```python
+def __receive_data(self, client, buff_size=1024, decoding="ascii") -> Protocol:
     # Receive data from network
-    message = sock.recv(1024).decode("ascii")
+    message = client.recv(buff_size).decode(decoding)
     # Transform data into a protocol
     message: Protocol = Protocol.from_network(message)
-
-    # Process message
-    # (potentially call receive_hook() from test-client.py)
-    self.__process_message(message, is_receiving=True)
+    return message
 ```
 
 #### Process Message
+- Used to process messages both in receiving and sending
+- Used in both `server.py` and `client.py`, different functions with similar behavior
+- Caller function for `receive_hook()` and `send_hook()` which are defined in the user-facing files
+- Called by:
+    - `__handle_client()`: upon receiving a message, with `is_receiving = True`
+    - `__command_line()`: upon a user entering a protocol method name (testing)
+- Useful for:
+    - 'Manually' sending / processing messages in code
+- `return`:
+  - `False`: 
+    - if program should continue running.
+  - `True`: :exclamation:
+    - if shutdown protocol is in progress. Returning `True` from either `receive_hook()` or `send_hook()` results in eventual shutdown of the program.
 ```python
-def __process_message(self, message: Protocol, is_receiving=False):
+def __process_message(self, client: Node, message: Protocol, is_receiving=False):
     if message == ProtocolMethod.EXIT:
-        pass
+        return self.disconnect_client(client, state=message.state)
     # [...]
+
     # If message/command was not a 'default' protocol (INIT, EXIT, etc.)
     # then process hooks
     if self.receive_hook is not None and is_receiving:
         # Calls receive_hook() from test-client.py
-        return self.receive_hook(self, self.sock, message)
-    
+        return self.receive_hook(self, client, message)
+
     if self.send_hook is not None and not is_receiving:
         # Calls send_hook() from test-client.py
-        return self.send_hook(self, self.sock, message)
+        return self.send_hook(self, client, message)
 
     return False
 ```
+
+
 
 
 ## [:page_facing_up: Client](../../communication/client.py)
@@ -227,6 +258,19 @@ def __receive_data(self, sock, mask):
 ```
 
 #### Process Message
+- Used to process messages both in receiving and sending
+- Used in both `server.py` and `client.py`, different functions with similar behavior
+- Caller function for `receive_hook()` and `send_hook()` which are defined in the user-facing files
+- Called by:
+    - `__receive_data()`: upon receiving a message, with `is_receiving = True`
+    - `__command_line()`: upon a user entering a protocol method name (testing)
+- Useful for:
+    - 'Manually' sending / processing messages in code
+- `return`:
+  - `False`: 
+    - if program should continue running.
+  - `True`: :exclamation:
+    - if shutdown protocol is in progress. Returning `True` from either `receive_hook()` or `send_hook()` results in eventual shutdown of the program.
 ```python
 def __process_message(self, message: Protocol, is_receiving=False):
     if message == ProtocolMethod.EXIT:
