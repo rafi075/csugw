@@ -7,4 +7,5 @@
 ## Table of Contents
 - [:file_folder: Workflow / Updating](./documentation/workflow%5Cupdating/) 
   - [:page_facing_up: Code Base](./codechanges.md)
+  - [:page_facing_up: Adding A Feature](./adding_a_feature.md)
   - [:page_facing_up: VM Node](./archnode.md)

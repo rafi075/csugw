@@ -29,6 +29,6 @@
     - [:page_facing_up: GNS3](./documentation/setup/gns3.md)
   - [:file_folder: Workflow / Updating](./documentation/workflow%5Cupdating/) 
     - [:page_facing_up: Code Base](./documentation/workflow%5Cupdating/codechanges.md)
+    - [:page_facing_up: Adding A Feature](./documentation/workflow%5Cupdating/adding_a_feature.md)
     - [:page_facing_up: VM Node](./documentation/workflow%5Cupdating/archnode.md)
-  
 </div>
