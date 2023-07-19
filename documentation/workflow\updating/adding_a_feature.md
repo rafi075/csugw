@@ -36,9 +36,9 @@ With this purpose in mind, we can generalize the development paths into 3 genera
    - Where and how will the client know when and what to double?
 
 ## Protocol
->Please refer to the [protocol documentation](./codechanges.md#📄-protocol) if you are unclear on what a protocol.
+>Please refer to the [protocol documentation](./codechanges.md#📄-protocol) if you are unclear on what a protocol is.
 
-Here is the default protocol schema. It demands that every message *at least* contain a `TYPE`, `ID`, and `METHOD` field. This schema will suffice for the `DEMO` feature as we can distinguish a `DEMO` network message from any other network message based on the value of the `METHOD` field.
+Here is the default protocol schema. It demands that every message *at least* contain a `TYPE`, `ID`, and `METHOD` field (indicated by the `required` field). This schema will suffice for the `DEMO` feature as we can distinguish a `DEMO` network message from any other network message based on the value of the `METHOD` field.
 ```python
 DEFAULT_SCHEMA = {
     "type": "object",
@@ -76,29 +76,29 @@ However, to give the `METHOD` value of "DEMO" any meaning, we need to define it 
 
 ```python
 class Field(Enum):
-    ID              = "ID"
-    TYPE            = "TYPE"
-    METHOD          = "METHOD"
-    BODY            = "BODY"
-    STATE           = "STATE"
+    ID         = "ID"
+    TYPE       = "TYPE"
+    METHOD     = "METHOD"
+    BODY       = "BODY"
+    STATE      = "STATE"
 
 class ProtocolState(Enum):
-    DEFAULT         = "DEFAULT"
-    FAIL            = "FAIL"
+    DEFAULT    = "DEFAULT"
+    FAIL       = "FAIL"
     # [...]
 
 class ProtocolType(Enum):
-    DIRECT          = "DIRECT"
-    BROADCAST       = "BROADCAST"
+    DIRECT     = "DIRECT"
+    BROADCAST  = "BROADCAST"
 
 class ProtocolMethod(Enum):
-    DEFAULT         = "DEFAULT"
+    DEFAULT    = "DEFAULT"
 ```
 To do this, we simply define a new entry in `ProtocolMethod`:
 ```python
 class ProtocolMethod(Enum):
-    DEFAULT         = "DEFAULT"
-    DEMO            = "DEMO"
+    DEFAULT    = "DEFAULT"
+    DEMO       = "DEMO"
 ```
 Now, all network traffic and devices understand that `DEMO` is a `METHOD`... but nothing knows what `DEMO` does!
 
