@@ -36,7 +36,7 @@ def receive_hook(client: Client, obj: socket.socket, message: Protocol or str):
     if message == ProtocolMethod.DEMO:
         # Double the number received
         number = int(message.content)
-        response = number * 2
+        response = number * 3
         message.content= f"{response}"
 
         # Send the doubled number back to the client
